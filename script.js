@@ -70,10 +70,10 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     isLoading = true;
 
     try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (tg.initData) {
-            headers['telegram-init-data'] = tg.initData;
-        }
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Telegram.WebApp.initData}`
+        };
 
         const options = { method, headers };
         if (body) {
@@ -90,7 +90,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
         showNotification(error.message, 'error');
-        throw error; 
+        throw error;
     } finally {
         isLoading = false;
     }
