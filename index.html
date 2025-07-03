@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Telegram Clicker Pro</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <section id="main" class="page active">
+            <h1>🖱 Clicker</h1>
+            <p>Coins: <span id="coins">0</span></p>
+            <p>Coins/sec: <span id="coinsPerSec">0</span></p>
+            <button id="clickBtn">Click!</button>
+        </section>
+
+        <section id="top" class="page">
+            <h1>🏆 Top Players</h1>
+            <ul id="topList"></ul>
+        </section>
+
+        <section id="upgrade" class="page">
+            <h1>⚙️ Upgrade</h1>
+            <div class="upgrade-section">
+                <h2>Upgrade Coins Per Click</h2>
+                <p>Level: <span id="upgradeClickLevel">0</span></p>
+                <p>Cost: <span id="upgradeClickCost">10</span> coins</p>
+                <button id="upgradeClickBtn">Upgrade</button>
+            </div>
+            <div class="upgrade-section">
+                <h2>Upgrade Coins Per Second</h2>
+                <p>Level: <span id="upgradeAutoLevel">0</span></p>
+                <p>Cost: <span id="upgradeAutoCost">20</span> coins</p>
+                <button id="upgradeAutoBtn">Upgrade</button>
+            </div>
+        </section>
+
+        <section id="transfer" class="page">
+            <h1>💸 Transfer Coins</h1>
+            <input id="transferUsername" type="text" placeholder="@username" />
+            <input id="transferAmount" type="number" placeholder="Amount" min="1" />
+            <button id="transferBtn">Send</button>
+            <p id="transferMessage"></p>
+        </section>
+
+        <nav class="bottom-nav">
+            <button id="nav-main" class="active" aria-label="Main">
+                🖱
+                <span>Main</span>
+            </button>
+            <button id="nav-top" aria-label="Top Players">
+                🏆
+                <span>Top</span>
+            </button>
+            <button id="nav-upgrade" aria-label="Upgrade">
+                ⚙️
+                <span>Upgrade</span>
+            </button>
+            <button id="nav-transfer" aria-label="Transfer">
+                💸
+                <span>Transfer</span>
+            </button>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
