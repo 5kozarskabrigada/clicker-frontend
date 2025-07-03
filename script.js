@@ -1,16 +1,11 @@
-// --- SETUP ---
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// IMPORTANT: Replace this with your actual deployed backend URL.
-// Example: 'https://my-telegram-game.onrender.com'
-const API_URL = 'https://your-backend-url.com';
+const API_URL = 'https://clicker-backend-cy7w.onrender.com';
 
 let userData = null;
 let isLoading = false;
 
-// --- DOM ELEMENT REFERENCES ---
-// (Your existing element references are all correct)
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
 const coinsPerClickEl = document.getElementById('coinsPerClick');
@@ -30,7 +25,6 @@ const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
-// --- NAVIGATION ---
 const pages = {
     main: document.getElementById('main'),
     top: document.getElementById('top'),
@@ -45,7 +39,7 @@ const navButtons = {
     upgrade: document.getElementById('nav-upgrade'),
     images: document.getElementById('nav-images'),
     achievements: document.getElementById('nav-achievements'),
-    transfer: document.getElementById('nav-transfer'), // Ensure this exists in your HTML
+    transfer: document.getElementById('nav-transfer'), 
 };
 
 function showPage(pageId) {
@@ -57,7 +51,6 @@ function showPage(pageId) {
     pages[pageId].classList.add('active');
     navButtons[pageId].classList.add('active');
 
-    // Load data specific to the page when it's opened
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
@@ -65,13 +58,11 @@ function showPage(pageId) {
     }
 }
 
-// Add event listeners for all navigation buttons
 Object.keys(navButtons).forEach(key => {
     if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
 });
 
 
-// --- CORE API COMMUNICATION ---
 async function apiRequest(endpoint, method = 'GET', body = null) {
     if (isLoading && method !== 'GET') {
         return Promise.reject(new Error('Another request is already in progress.'));
@@ -99,13 +90,12 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
         showNotification(error.message, 'error');
-        throw error; // Re-throw the error so calling functions can handle it
+        throw error; 
     } finally {
         isLoading = false;
     }
 }
 
-// --- UI & GAME LOGIC ---
 
 function updateUI() {
     if (!userData) return;
@@ -128,7 +118,7 @@ clickImage.onclick = async (event) => {
         userData = updatedUser;
         updateUI();
         showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
-    } catch (e) { /* Error is handled by apiRequest */ }
+    } catch (e) {  }
 };
 
 upgradeClickBtn.onclick = async () => {
@@ -137,7 +127,7 @@ upgradeClickBtn.onclick = async () => {
         userData = updatedUser;
         updateUI();
         showNotification('Click power upgraded!', 'success');
-    } catch (e) { /* Error handled */ }
+    } catch (e) { }
 };
 
 upgradeAutoBtn.onclick = async () => {
@@ -146,7 +136,7 @@ upgradeAutoBtn.onclick = async () => {
         userData = updatedUser;
         updateUI();
         showNotification('Auto income upgraded!', 'success');
-    } catch (e) { /* Error handled */ }
+    } catch (e) {}
 };
 
 transferBtn.onclick = async () => {
@@ -176,7 +166,7 @@ transferBtn.onclick = async () => {
 async function loadTopPlayers() {
     try {
         const players = await apiRequest('/top');
-        topListEl.innerHTML = ''; // Clear previous list
+        topListEl.innerHTML = ''; 
         players.forEach((player, idx) => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="rank">${idx + 1}.</span> <span class="name">@${player.username || 'anonymous'}</span> <span class="coins">${player.coins.toLocaleString()} 🪙</span>`;
@@ -198,7 +188,6 @@ async function loadImages() {
             const imageCard = document.createElement('div');
             imageCard.className = `image-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`;
 
-            // Re-using your exact structure from the original file
             const imagePreview = document.createElement('div');
             imagePreview.className = `image-preview image-${image.id}`; // Use a class for CSS background-image
 
@@ -234,7 +223,7 @@ async function loadImages() {
                 buyBtn.className = 'buy-btn';
                 buyBtn.textContent = 'Buy';
                 buyBtn.onclick = () => buyImage(image.id, image.cost);
-                buyBtn.disabled = userData.coins < image.cost; // Disable if not affordable
+                buyBtn.disabled = userData.coins < image.cost; 
 
                 imageStatus.appendChild(cost);
                 imageStatus.appendChild(buyBtn);
@@ -258,9 +247,9 @@ async function buyImage(imageId, cost) {
         const updatedUser = await apiRequest('/images/buy', 'POST', { imageId });
         userData = updatedUser;
         updateUI();
-        loadImages(); // Refresh the view to show the unlocked image
+        loadImages(); 
         showNotification('Image unlocked!', 'success');
-    } catch (e) { /* Error handled by apiRequest */ }
+    } catch (e) { }
 }
 
 async function selectImage(imageId) {
@@ -268,9 +257,9 @@ async function selectImage(imageId) {
         const updatedUser = await apiRequest('/images/select', 'POST', { imageId });
         userData = updatedUser;
         updateUI();
-        loadImages(); // Refresh to show the new selection
+        loadImages(); 
         showNotification('Image selected!', 'success');
-    } catch (e) { /* Error handled by apiRequest */ }
+    } catch (e) { }
 }
 
 async function loadAchievements() {
@@ -280,7 +269,6 @@ async function loadAchievements() {
         allAchievements.forEach(ach => {
             const userAch = userAchievements.find(ua => ua.achievement_id === ach.id);
 
-            // Your exact card creation logic from the original file
             const achCard = document.createElement('div');
             achCard.className = `achievement-card ${userAch ? 'unlocked' : 'locked'}`;
             const achIcon = document.createElement('div');
@@ -310,14 +298,12 @@ async function loadAchievements() {
     }
 }
 
-// --- UTILITY FUNCTIONS ---
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
     notificationContainer.appendChild(notification);
 
-    // Animate in and out
     setTimeout(() => { notification.classList.add('show'); }, 10);
     setTimeout(() => {
         notification.classList.remove('show');
@@ -329,11 +315,10 @@ function showFloatingCoin(x, y, amount) {
     const coin = document.createElement('div');
     coin.className = 'floating-coin';
     coin.textContent = amount;
-    coin.style.left = `${x - 15}px`; // Center it slightly
+    coin.style.left = `${x - 15}px`; 
     coin.style.top = `${y - 30}px`;
     document.body.appendChild(coin);
 
-    // Animate up and fade out
     setTimeout(() => {
         coin.style.transform = 'translateY(-50px)';
         coin.style.opacity = '0';
@@ -341,7 +326,6 @@ function showFloatingCoin(x, y, amount) {
     setTimeout(() => coin.remove(), 1000);
 }
 
-// --- INITIALIZATION ---
 async function init() {
     try {
         const response = await apiRequest('/user');
@@ -355,12 +339,11 @@ async function init() {
 
         updateUI();
 
-        // Start client-side timer to visually update coin count every second
         setInterval(() => {
             if (userData && userData.coins_per_sec > 0) {
                 userData.coins += userData.coins_per_sec;
                 coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
-                // Also, update affordibility of upgrades live
+
                 upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
                 upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
             }
@@ -371,7 +354,6 @@ async function init() {
     }
 }
 
-// Start the application
 tg.ready();
 init();
 showPage('main');
