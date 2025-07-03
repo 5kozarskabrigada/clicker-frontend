@@ -1,342 +1,206 @@
+// --- SETUP ---
 const tg = window.Telegram.WebApp;
 tg.expand();
 
+// IMPORTANT: Replace this with your actual deployed backend URL.
+// Example: 'https://my-telegram-game.onrender.com'
+const API_URL = 'https://your-backend-url.com';
 
-const supabaseUrl = 'https://nwqtmkimhwscopczrjtq.supabase.co'; 
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cXRta2ltaHdzY29wY3pyanRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NTEzNjgsImV4cCI6MjA2NzEyNzM2OH0.o5lvZYZ6vfn7bhgSZw4z29pFG5Y7uphLP1trW2sG2KM'; // Replace with your anon/public key
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+let userData = null;
+let isLoading = false;
 
+// --- DOM ELEMENT REFERENCES ---
+// (Your existing element references are all correct)
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
 const coinsPerClickEl = document.getElementById('coinsPerClick');
-const clickBtn = document.getElementById('clickBtn');
 const clickImage = document.getElementById('clickImage');
-
 const upgradeClickLevelEl = document.getElementById('upgradeClickLevel');
 const upgradeClickCostEl = document.getElementById('upgradeClickCost');
 const upgradeClickBtn = document.getElementById('upgradeClickBtn');
-
 const upgradeAutoLevelEl = document.getElementById('upgradeAutoLevel');
 const upgradeAutoCostEl = document.getElementById('upgradeAutoCost');
 const upgradeAutoBtn = document.getElementById('upgradeAutoBtn');
-
 const transferUsernameEl = document.getElementById('transferUsername');
 const transferAmountEl = document.getElementById('transferAmount');
 const transferBtn = document.getElementById('transferBtn');
 const transferMessageEl = document.getElementById('transferMessage');
-
-
-const navMainBtn = document.getElementById('nav-main');
-const navTopBtn = document.getElementById('nav-top');
-const navUpgradeBtn = document.getElementById('nav-upgrade');
-const navImagesBtn = document.getElementById('nav-images');
-const navAchievementsBtn = document.getElementById('nav-achievements');
-
-
-const mainPage = document.getElementById('main');
-const topPage = document.getElementById('top');
-const upgradePage = document.getElementById('upgrade');
-const imagesPage = document.getElementById('images');
-const achievementsPage = document.getElementById('achievements');
-const transferPage = document.getElementById('transfer');
-
-
 const topListEl = document.getElementById('topList');
 const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
-let userData = null;
-let updateInterval = null;
-
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notificationContainer.appendChild(notification);
-
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
-}
-
+// --- NAVIGATION ---
+const pages = {
+    main: document.getElementById('main'),
+    top: document.getElementById('top'),
+    upgrade: document.getElementById('upgrade'),
+    images: document.getElementById('images'),
+    achievements: document.getElementById('achievements'),
+    transfer: document.getElementById('transfer'),
+};
+const navButtons = {
+    main: document.getElementById('nav-main'),
+    top: document.getElementById('nav-top'),
+    upgrade: document.getElementById('nav-upgrade'),
+    images: document.getElementById('nav-images'),
+    achievements: document.getElementById('nav-achievements'),
+    transfer: document.getElementById('nav-transfer'), // Ensure this exists in your HTML
+};
 
 function showPage(pageId) {
-    const pages = [mainPage, topPage, upgradePage, imagesPage, achievementsPage, transferPage];
-    const navButtons = [navMainBtn, navTopBtn, navUpgradeBtn, navImagesBtn, navAchievementsBtn];
+    if (!pages[pageId] || !navButtons[pageId]) return;
 
-    pages.forEach(p => p.classList.remove('active'));
-    navButtons.forEach(b => b.classList.remove('active'));
+    Object.values(pages).forEach(p => p && p.classList.remove('active'));
+    Object.values(navButtons).forEach(b => b && b.classList.remove('active'));
 
+    pages[pageId].classList.add('active');
+    navButtons[pageId].classList.add('active');
+
+    // Load data specific to the page when it's opened
     switch (pageId) {
-        case 'main':
-            mainPage.classList.add('active');
-            navMainBtn.classList.add('active');
-            break;
-        case 'top':
-            topPage.classList.add('active');
-            navTopBtn.classList.add('active');
-            loadTopPlayers();
-            break;
-        case 'upgrade':
-            upgradePage.classList.add('active');
-            navUpgradeBtn.classList.add('active');
-            break;
-        case 'images':
-            imagesPage.classList.add('active');
-            navImagesBtn.classList.add('active');
-            loadImages();
-            break;
-        case 'achievements':
-            achievementsPage.classList.add('active');
-            navAchievementsBtn.classList.add('active');
-            loadAchievements();
-            break;
-        case 'transfer':
-            transferPage.classList.add('active');
-            break;
+        case 'top': loadTopPlayers(); break;
+        case 'images': loadImages(); break;
+        case 'achievements': loadAchievements(); break;
     }
 }
 
+// Add event listeners for all navigation buttons
+Object.keys(navButtons).forEach(key => {
+    if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
+});
 
-navMainBtn.onclick = () => showPage('main');
-navTopBtn.onclick = () => showPage('top');
-navUpgradeBtn.onclick = () => showPage('upgrade');
-navImagesBtn.onclick = () => showPage('images');
-navAchievementsBtn.onclick = () => showPage('achievements');
 
-async function loadUserData() {
+// --- CORE API COMMUNICATION ---
+async function apiRequest(endpoint, method = 'GET', body = null) {
+    if (isLoading && method !== 'GET') {
+        return Promise.reject(new Error('Another request is already in progress.'));
+    }
+    isLoading = true;
+
     try {
-        const { data, error } = await supabase.auth.signInWithIdToken({
-            provider: 'telegram',
-            token: tg.initData,
-            access_token: tg.initData
-        });
+        const headers = { 'Content-Type': 'application/json' };
+        if (tg.initData) {
+            headers['telegram-init-data'] = tg.initData;
+        }
 
-        if (error) throw error;
+        const options = { method, headers };
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
 
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('telegram_id', data.user.id)
-            .single();
+        const response = await fetch(`${API_URL}/api${endpoint}`, options);
+        const responseData = await response.json();
 
-        if (userError) throw userError;
-
-        userData = user;
-        updateUI();
-
-        checkAchievements();
-
-    } catch (e) {
-        console.error('Failed to load user data:', e);
-        showNotification('Failed to load data. Please try again.', 'error');
+        if (!response.ok) {
+            throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
+        }
+        return responseData;
+    } catch (error) {
+        console.error(`API request to ${endpoint} failed:`, error);
+        showNotification(error.message, 'error');
+        throw error; // Re-throw the error so calling functions can handle it
+    } finally {
+        isLoading = false;
     }
 }
 
+// --- UI & GAME LOGIC ---
 
 function updateUI() {
     if (!userData) return;
-
-    coinsEl.textContent = userData.coins.toLocaleString();
+    coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
     coinsPerSecEl.textContent = userData.coins_per_sec.toLocaleString();
     coinsPerClickEl.textContent = userData.coins_per_click.toLocaleString();
-
     upgradeClickLevelEl.textContent = userData.click_upgrade_level;
     upgradeClickCostEl.textContent = userData.click_upgrade_cost.toLocaleString();
     upgradeAutoLevelEl.textContent = userData.auto_upgrade_level;
     upgradeAutoCostEl.textContent = userData.auto_upgrade_cost.toLocaleString();
+    clickImage.className = `click-image ${userData.current_image || 'default'}`;
 
-
-    clickImage.className = `click-image ${userData.current_image}`;
+    upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
+    upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
 }
 
-
-clickImage.onclick = async () => {
+clickImage.onclick = async (event) => {
     try {
-       
-        const clickEffect = document.querySelector('.click-effect');
-        clickEffect.style.display = 'block';
-        clickEffect.style.left = `${event.clientX - clickImage.getBoundingClientRect().left - 25}px`;
-        clickEffect.style.top = `${event.clientY - clickImage.getBoundingClientRect().top - 25}px`;
-
-        setTimeout(() => {
-            clickEffect.style.display = 'none';
-        }, 500);
-
-        const { data, error } = await supabase
-            .rpc('increment_coins', {
-                user_id: userData.id,
-                amount: userData.coins_per_click
-            });
-
-        if (error) throw error;
-
-        userData = data;
+        const updatedUser = await apiRequest('/click', 'POST');
+        userData = updatedUser;
         updateUI();
-
         showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
-
-    } catch (e) {
-        console.error('Click failed:', e);
-        showNotification('Click failed. Try again.', 'error');
-    }
+    } catch (e) { /* Error is handled by apiRequest */ }
 };
-
-function showFloatingCoin(x, y, amount) {
-    const coin = document.createElement('div');
-    coin.className = 'floating-coin';
-    coin.textContent = amount;
-    coin.style.left = `${x - 20}px`;
-    coin.style.top = `${y - 20}px`;
-    document.body.appendChild(coin);
-
-    setTimeout(() => {
-        coin.style.transform = 'translateY(-30px)';
-        coin.style.opacity = '0';
-    }, 10);
-
-    setTimeout(() => {
-        coin.remove();
-    }, 1000);
-}
-
 
 upgradeClickBtn.onclick = async () => {
     try {
-        const { data, error } = await supabase
-            .rpc('upgrade_click', { user_id: userData.id });
-
-        if (error) throw error;
-
-        userData = data;
+        const updatedUser = await apiRequest('/upgrade/click', 'POST');
+        userData = updatedUser;
         updateUI();
         showNotification('Click power upgraded!', 'success');
-    } catch (e) {
-        console.error('Upgrade click failed:', e);
-        showNotification(e.message || 'Upgrade failed. Try again.', 'error');
-    }
+    } catch (e) { /* Error handled */ }
 };
 
 upgradeAutoBtn.onclick = async () => {
     try {
-        const { data, error } = await supabase
-            .rpc('upgrade_auto', { user_id: userData.id });
-
-        if (error) throw error;
-
-        userData = data;
+        const updatedUser = await apiRequest('/upgrade/auto', 'POST');
+        userData = updatedUser;
         updateUI();
         showNotification('Auto income upgraded!', 'success');
-    } catch (e) {
-        console.error('Upgrade auto failed:', e);
-        showNotification(e.message || 'Upgrade failed. Try again.', 'error');
-    }
+    } catch (e) { /* Error handled */ }
 };
 
-
 transferBtn.onclick = async () => {
-    const toUser = transferUsernameEl.value.trim().replace(/^@/, '');
-    const amount = parseInt(transferAmountEl.value);
+    const toUsername = transferUsernameEl.value.trim().replace(/^@/, '');
+    const amount = parseInt(transferAmountEl.value, 10);
 
-    if (!toUser || !amount || amount <= 0) {
+    if (!toUsername || !amount || amount <= 0) {
+        transferMessageEl.textContent = 'Please enter a valid username and amount.';
         transferMessageEl.className = 'transfer-message error';
-        transferMessageEl.textContent = 'Enter valid username and amount.';
         return;
     }
 
     try {
-        const { data, error } = await supabase
-            .rpc('transfer_coins', {
-                from_user_id: userData.id,
-                to_username: toUser,
-                amount: amount
-            });
-
-        if (error) throw error;
-
-        transferMessageEl.className = 'transfer-message success';
-        transferMessageEl.textContent = `Sent ${amount} coins to @${toUser}`;
-        userData.coins = data.coins;
+        const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
+        userData = result.updatedSender;
         updateUI();
+        transferMessageEl.textContent = result.message;
+        transferMessageEl.className = 'transfer-message success';
+        transferUsernameEl.value = '';
+        transferAmountEl.value = '';
     } catch (e) {
+        transferMessageEl.textContent = e.message;
         transferMessageEl.className = 'transfer-message error';
-        transferMessageEl.textContent = e.message || 'Transfer failed. Try again later.';
-        console.error('Transfer failed:', e);
     }
 };
 
 async function loadTopPlayers() {
     try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('username, coins')
-            .order('coins', { ascending: false })
-            .limit(10);
-
-        if (error) throw error;
-
-        topListEl.innerHTML = '';
-        data.forEach((player, idx) => {
+        const players = await apiRequest('/top');
+        topListEl.innerHTML = ''; // Clear previous list
+        players.forEach((player, idx) => {
             const li = document.createElement('li');
-
-            const rank = document.createElement('span');
-            rank.className = 'rank';
-            rank.textContent = `${idx + 1}.`;
-
-            const name = document.createElement('span');
-            name.className = 'name';
-            name.textContent = `@${player.username || 'anonymous'}`;
-
-            const coins = document.createElement('span');
-            coins.className = 'coins';
-            coins.textContent = `${player.coins.toLocaleString()}`;
-
-            li.appendChild(rank);
-            li.appendChild(name);
-            li.appendChild(coins);
+            li.innerHTML = `<span class="rank">${idx + 1}.</span> <span class="name">@${player.username || 'anonymous'}</span> <span class="coins">${player.coins.toLocaleString()} 🪙</span>`;
             topListEl.appendChild(li);
         });
     } catch (e) {
-        topListEl.innerHTML = '<li class="error">Failed to load top players</li>';
-        console.error('Load top players failed:', e);
+        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
     }
 }
 
 async function loadImages() {
     try {
-        const { data: images, error: imagesError } = await supabase
-            .from('image_upgrades')
-            .select('*');
-
-        if (imagesError) throw imagesError;
-
-        const { data: userImages, error: userError } = await supabase
-            .from('user_images')
-            .select('image_id')
-            .eq('user_id', userData.id);
-
-        if (userError) throw userError;
-
+        const { allImages, userImages, currentImageId } = await apiRequest('/images');
         imagesContainer.innerHTML = '';
-
-        images.forEach(image => {
+        allImages.forEach(image => {
             const isUnlocked = userImages.some(ui => ui.image_id === image.id);
-            const isSelected = userData.current_image === image.id;
+            const isSelected = currentImageId === image.id;
 
             const imageCard = document.createElement('div');
             imageCard.className = `image-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`;
 
+            // Re-using your exact structure from the original file
             const imagePreview = document.createElement('div');
-            imagePreview.className = `image-preview ${image.id}`;
+            imagePreview.className = `image-preview image-${image.id}`; // Use a class for CSS background-image
 
             const imageInfo = document.createElement('div');
             imageInfo.className = 'image-info';
@@ -346,7 +210,7 @@ async function loadImages() {
 
             const imageBonus = document.createElement('p');
             imageBonus.className = 'bonus';
-            imageBonus.textContent = `+${image.coins_per_click_bonus} coins/click`;
+            imageBonus.textContent = `+${image.coins_per_click_bonus || 0} coins/click`;
 
             const imageStatus = document.createElement('div');
             imageStatus.className = 'status';
@@ -364,176 +228,150 @@ async function loadImages() {
             } else {
                 const cost = document.createElement('p');
                 cost.className = 'cost';
-                cost.textContent = `${image.cost.toLocaleString()}`;
+                cost.textContent = `${image.cost.toLocaleString()} 🪙`;
 
                 const buyBtn = document.createElement('button');
                 buyBtn.className = 'buy-btn';
                 buyBtn.textContent = 'Buy';
-                buyBtn.onclick = () => buyImage(image.id);
+                buyBtn.onclick = () => buyImage(image.id, image.cost);
+                buyBtn.disabled = userData.coins < image.cost; // Disable if not affordable
 
                 imageStatus.appendChild(cost);
                 imageStatus.appendChild(buyBtn);
             }
 
-            imageInfo.appendChild(imageName);
-            imageInfo.appendChild(imageBonus);
-            imageInfo.appendChild(imageStatus);
-
-            imageCard.appendChild(imagePreview);
-            imageCard.appendChild(imageInfo);
+            imageInfo.append(imageName, imageBonus, imageStatus);
+            imageCard.append(imagePreview, imageInfo);
             imagesContainer.appendChild(imageCard);
         });
     } catch (e) {
-        console.error('Load images failed:', e);
-        imagesContainer.innerHTML = '<div class="error">Failed to load images</div>';
+        imagesContainer.innerHTML = '<div class="error">Failed to load images.</div>';
     }
 }
 
-
-async function buyImage(imageId) {
+async function buyImage(imageId, cost) {
+    if (userData.coins < cost) {
+        showNotification("You don't have enough coins!", 'error');
+        return;
+    }
     try {
-        const { data, error } = await supabase
-            .rpc('buy_image', {
-                user_id: userData.id,
-                image_id: imageId
-            });
-
-        if (error) throw error;
-
-        userData = data;
+        const updatedUser = await apiRequest('/images/buy', 'POST', { imageId });
+        userData = updatedUser;
         updateUI();
-        loadImages();
-
-        showNotification(`Image ${data.unlocked ? 'unlocked' : 'selected'}!`, 'success');
-    } catch (e) {
-        console.error('Buy image failed:', e);
-        showNotification(e.message || 'Failed to buy image. Try again.', 'error');
-    }
+        loadImages(); // Refresh the view to show the unlocked image
+        showNotification('Image unlocked!', 'success');
+    } catch (e) { /* Error handled by apiRequest */ }
 }
-
 
 async function selectImage(imageId) {
     try {
-        const { data, error } = await supabase
-            .from('users')
-            .update({ current_image: imageId })
-            .eq('id', userData.id)
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        userData = data;
+        const updatedUser = await apiRequest('/images/select', 'POST', { imageId });
+        userData = updatedUser;
         updateUI();
-        loadImages();
+        loadImages(); // Refresh to show the new selection
         showNotification('Image selected!', 'success');
-    } catch (e) {
-        console.error('Select image failed:', e);
-        showNotification('Failed to select image. Try again.', 'error');
-    }
+    } catch (e) { /* Error handled by apiRequest */ }
 }
-
 
 async function loadAchievements() {
     try {
-        const { data: achievements, error: achError } = await supabase
-            .from('achievements')
-            .select('*');
-
-        if (achError) throw achError;
-
-        const { data: userAchievements, error: userError } = await supabase
-            .from('user_achievements')
-            .select('achievement_id, unlocked_at')
-            .eq('user_id', userData.id);
-
-        if (userError) throw userError;
-
+        const { allAchievements, userAchievements } = await apiRequest('/achievements');
         achievementsContainer.innerHTML = '';
-
-        achievements.forEach(ach => {
+        allAchievements.forEach(ach => {
             const userAch = userAchievements.find(ua => ua.achievement_id === ach.id);
 
+            // Your exact card creation logic from the original file
             const achCard = document.createElement('div');
             achCard.className = `achievement-card ${userAch ? 'unlocked' : 'locked'}`;
-
             const achIcon = document.createElement('div');
             achIcon.className = 'achievement-icon';
             achIcon.textContent = userAch ? '🏆' : '🔒';
-
             const achContent = document.createElement('div');
             achContent.className = 'achievement-content';
-
             const achTitle = document.createElement('h3');
             achTitle.textContent = ach.name;
-
             const achDesc = document.createElement('p');
             achDesc.className = 'description';
             achDesc.textContent = ach.description;
+            achContent.append(achTitle, achDesc);
 
             if (userAch) {
                 const achDate = document.createElement('p');
                 achDate.className = 'date';
-                achDate.textContent = new Date(userAch.unlocked_at).toLocaleDateString();
+                achDate.textContent = `Unlocked: ${new Date(userAch.unlocked_at).toLocaleDateString()}`;
                 achContent.appendChild(achDate);
             }
 
-            achContent.appendChild(achTitle);
-            achContent.appendChild(achDesc);
-            achCard.appendChild(achIcon);
-            achCard.appendChild(achContent);
+            achCard.append(achIcon, achContent);
             achievementsContainer.appendChild(achCard);
         });
     } catch (e) {
-        console.error('Load achievements failed:', e);
-        achievementsContainer.innerHTML = '<div class="error">Failed to load achievements</div>';
+        achievementsContainer.innerHTML = '<div class="error">Failed to load achievements.</div>';
     }
 }
 
+// --- UTILITY FUNCTIONS ---
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notificationContainer.appendChild(notification);
 
-async function checkAchievements() {
+    // Animate in and out
+    setTimeout(() => { notification.classList.add('show'); }, 10);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        notification.addEventListener('transitionend', () => notification.remove());
+    }, 3000);
+}
+
+function showFloatingCoin(x, y, amount) {
+    const coin = document.createElement('div');
+    coin.className = 'floating-coin';
+    coin.textContent = amount;
+    coin.style.left = `${x - 15}px`; // Center it slightly
+    coin.style.top = `${y - 30}px`;
+    document.body.appendChild(coin);
+
+    // Animate up and fade out
+    setTimeout(() => {
+        coin.style.transform = 'translateY(-50px)';
+        coin.style.opacity = '0';
+    }, 10);
+    setTimeout(() => coin.remove(), 1000);
+}
+
+// --- INITIALIZATION ---
+async function init() {
     try {
-        const { data, error } = await supabase
-            .rpc('check_achievements', { user_id: userData.id });
+        const response = await apiRequest('/user');
+        userData = response;
 
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-            data.forEach(ach => {
-                showNotification(`Achievement Unlocked: ${ach.name}\n${ach.description}`, 'success');
+        if (response.newly_unlocked_achievements?.length > 0) {
+            response.newly_unlocked_achievements.forEach(ach => {
+                showNotification(`Achievement Unlocked: ${ach.name}!`, 'success');
             });
         }
+
+        updateUI();
+
+        // Start client-side timer to visually update coin count every second
+        setInterval(() => {
+            if (userData && userData.coins_per_sec > 0) {
+                userData.coins += userData.coins_per_sec;
+                coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+                // Also, update affordibility of upgrades live
+                upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
+                upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
+            }
+        }, 1000);
+
     } catch (e) {
-        console.error('Check achievements failed:', e);
+        document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
     }
 }
 
-
-function startAutoIncome() {
-    if (updateInterval) clearInterval(updateInterval);
-
-    updateInterval = setInterval(async () => {
-        try {
-            const { data, error } = await supabase
-                .rpc('auto_income', { user_id: userData.id });
-
-            if (error) throw error;
-
-            if (data && data.coins > userData.coins) {
-                userData = data;
-                updateUI();
-            }
-        } catch (e) {
-            console.error('Auto income update failed:', e);
-        }
-    }, 1000);
-}
-
-
-async function init() {
-    await loadUserData();
-    startAutoIncome();
-    showPage('main');
-}
-
+// Start the application
+tg.ready();
 init();
+showPage('main');
