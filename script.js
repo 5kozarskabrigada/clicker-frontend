@@ -72,8 +72,11 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Telegram.WebApp.initData}`
+            'Authorization': Telegram.WebApp.initData || ''
         };
+        console.log("Headers sent to API:", headers);
+        
+          
 
         const options = { method, headers };
         if (body) {
