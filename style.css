@@ -134,6 +134,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    min-height: 300px;
 }
 
 .click-image {
@@ -156,7 +157,6 @@ body {
 }
 
 #floating-text-container {
-    /* Renamed from floating-coins-container */
     position: absolute;
     top: 0;
     left: 0;
@@ -186,7 +186,7 @@ body {
     }
 }
 
-/* --- OTHER PAGES (UPGRADE, TOP, TRANSFER) --- */
+/* --- GENERIC STYLES FOR OTHER PAGES --- */
 .page-title {
     font-size: 28px;
     font-weight: 800;
@@ -222,6 +222,7 @@ body {
     font-weight: 600;
 }
 
+/* --- LEADERBOARD --- */
 .leaderboard-list {
     list-style: none;
     display: flex;
@@ -256,9 +257,78 @@ body {
     color: var(--gold);
 }
 
-.input-group,
-button {
-    /* Styling for these is mostly fine, can be reused */
+/* --- FORMS & BUTTONS (IMPROVED) --- */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 3px var(--primary-accent-glow);
+}
+
+.action-button {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    background: var(--primary-accent);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-button:disabled {
+    background: var(--bg-surface-light);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.action-button:not(:disabled):hover {
+    filter: brightness(1.1);
+}
+
+.action-button:not(:disabled):active {
+    transform: scale(0.98);
+}
+
+.transfer-message {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.transfer-message.success {
+    color: var(--success);
+}
+
+.transfer-message.error {
+    color: var(--error);
 }
 
 /* --- BOTTOM NAVIGATION --- */
@@ -305,9 +375,7 @@ button {
     transform: scale(0.9);
 }
 
-
-
-/* --- NOTIFICATIONS --- */
+/* --- Notifications --- */
 #notificationContainer {
     position: fixed;
     top: 20px;
@@ -321,9 +389,9 @@ button {
 }
 
 .notification {
-    background: var(--bg-tertiary);
+    background: var(--bg-surface-light);
     padding: 12px 20px;
-    border-radius: var(--border-radius-sm);
+    border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     border-left: 4px solid var(--primary-accent);
     opacity: 0;

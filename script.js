@@ -333,37 +333,39 @@ function showFloatingCoin(x, y, amount) {
 }
 
 // In script.js
+// In script.js
 
 async function init() {
     try {
-        // Initial load from the server (this also calculates passive income)
+        // Initial load from the server
         const response = await apiRequest('/user');
         userData = response;
         updateUI();
 
-        // Check for achievements unlocked during the initial load
-        if (response.newly_unlocked_achievements?.length > 0) {
-            response.newly_unlocked_achievements.forEach(ach => {
-                showNotification(`Achievement Unlocked: ${ach.name}!`, 'success');
-            });
-        }
+        // --- NEW & IMPROVED UPDATE LOGIC ---
 
-        // ---- NEW SMARTER UPDATE LOGIC ----
-        // This function will fetch the latest user data from the server.
+        // 1. Visually update the coin count every second based on passive income
+        setInterval(() => {
+            if (userData && userData.coins_per_sec > 0) {
+                // Only update the visual part, don't change the underlying `userData.coins`
+                const currentCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+                const newCoins = currentCoins + userData.coins_per_sec;
+                coinsEl.textContent = Math.floor(newCoins).toLocaleString();
+            }
+        }, 1000);
+
+        // 2. Periodically re-sync with the server to get the authoritative coin count
         const syncWithServer = async () => {
             if (isLoading) return; // Don't sync if another action is in progress
             try {
-                // The /user endpoint handles all passive income logic
                 const latestUserData = await apiRequest('/user');
-                userData = latestUserData;
-                updateUI();
+                userData = latestUserData; // This is the true-up from the server
+                updateUI(); // This will reset the display to the authoritative count
             } catch (error) {
                 console.warn("Periodic sync failed:", error.message);
             }
         };
-
-        // Sync with the server every 10 seconds to update coins and stats
-        setInterval(syncWithServer, 10000);
+        setInterval(syncWithServer, 15000); // Sync every 15 seconds
 
     } catch (e) {
         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
