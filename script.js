@@ -335,37 +335,67 @@ function showFloatingCoin(x, y, amount) {
 // In script.js
 // In script.js
 
+// In script.js
+
 async function init() {
     try {
-        // Initial load from the server
-        const response = await apiRequest('/user');
-        userData = response;
+        // Initial load from the server to get the starting state
+        const initialUserData = await apiRequest('/user');
+        userData = initialUserData;
         updateUI();
 
-        // --- NEW & IMPROVED UPDATE LOGIC ---
+        // --- FINAL & CORRECT UPDATE LOGIC ---
+        let lastServerCoins = userData.coins;
+        let lastSyncTime = Date.now();
+        let visualCoinUpdater;
 
-        // 1. Visually update the coin count every second based on passive income
-        setInterval(() => {
-            if (userData && userData.coins_per_sec > 0) {
-                // Only update the visual part, don't change the underlying `userData.coins`
-                const currentCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
-                const newCoins = currentCoins + userData.coins_per_sec;
-                coinsEl.textContent = Math.floor(newCoins).toLocaleString();
-            }
-        }, 1000);
+        const startVisualUpdates = () => {
+            if (visualCoinUpdater) clearInterval(visualCoinUpdater); // Clear any old interval
 
-        // 2. Periodically re-sync with the server to get the authoritative coin count
+            visualCoinUpdater = setInterval(() => {
+                if (userData && userData.coins_per_sec > 0) {
+                    // Visually increment the displayed coins without touching the authoritative `userData`
+                    const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+                    const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
+                    coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
+                }
+            }, 1000);
+        };
+
         const syncWithServer = async () => {
-            if (isLoading) return; // Don't sync if another action is in progress
+            if (isLoading) return;
+
             try {
                 const latestUserData = await apiRequest('/user');
-                userData = latestUserData; // This is the true-up from the server
-                updateUI(); // This will reset the display to the authoritative count
+                userData = latestUserData; // Update with the true data from server
+
+                // This is the magic: Calculate what the coin count *should* be visually
+                const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
+                const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
+                const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
+                const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+
+                // Only correct the display if it has drifted significantly from what's expected.
+                // This prevents jumps from clicks while still correcting for major desyncs.
+                if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
+                    coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+                }
+
+                // Update the rest of the UI with fresh data
+                updateUI();
+
+                // Reset the baseline for the next sync cycle
+                lastServerCoins = userData.coins;
+                lastSyncTime = Date.now();
+
             } catch (error) {
                 console.warn("Periodic sync failed:", error.message);
             }
         };
-        setInterval(syncWithServer, 15000); // Sync every 15 seconds
+
+        // Start the visual updates and periodic server syncs
+        startVisualUpdates();
+        setInterval(syncWithServer, 15000);
 
     } catch (e) {
         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
