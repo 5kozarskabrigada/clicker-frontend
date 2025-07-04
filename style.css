@@ -1,21 +1,18 @@
-/* --- MODERN RESET & ROOT VARIABLES --- */
+/* --- GLOBAL DESIGN SYSTEM --- */
 :root {
-    --bg-primary: #1c1c1e;
-    --bg-secondary: #2c2c2e;
-    --bg-tertiary: #3a3a3c;
-    --primary-accent: #bf5af2;
-    /* A vibrant purple */
-    --primary-accent-glow: rgba(191, 90, 242, 0.4);
-    --text-primary: #ffffff;
-    --text-secondary: #8e8e93;
-    --text-tertiary: #636366;
-    --gold: #ffcc00;
-    --success: #34c759;
-    --error: #ff3b30;
-    --border-radius-md: 16px;
-    --border-radius-sm: 12px;
-    --transition-fast: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --bg-primary: #121212;
+    --bg-surface: #1e1e1e;
+    --bg-surface-light: #2a2a2a;
+    --primary-accent: #8A63F2;
+    --primary-accent-glow: rgba(138, 99, 242, 0.25);
+    --text-primary: #EAEAEA;
+    --text-secondary: #9E9E9E;
+    --gold: #FFD700;
+    --success: #4CAF50;
+    --error: #F44336;
+    --border-color: #333333;
+    --border-radius: 16px;
+    --font-family: 'Inter', sans-serif;
     color-scheme: dark;
 }
 
@@ -27,17 +24,13 @@
     padding: 0;
 }
 
-/* --- BASE STYLES --- */
 body {
     font-family: var(--font-family);
     background: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
-    height: 100vh;
+    height: 100dvh;
     width: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
@@ -45,9 +38,6 @@ body {
 #app {
     width: 100%;
     height: 100%;
-    max-width: 480px;
-    max-height: 850px;
-    /* Common mobile viewport height */
     background: var(--bg-primary);
     display: flex;
     flex-direction: column;
@@ -59,35 +49,67 @@ body {
     flex-grow: 1;
     overflow-y: auto;
     padding: 20px 20px 100px 20px;
-    /* Extra padding at bottom for nav bar */
 }
 
 .app-content::-webkit-scrollbar {
     display: none;
 }
 
-/* Hide scrollbar */
-
-/* --- MAIN CLICKER PAGE --- */
-#main {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+/* --- PAGE CONTAINER & ANIMATIONS --- */
+.page {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
 }
 
-.main-header {
-    padding: 10px;
-    border-radius: var(--border-radius-md);
-    background: var(--bg-secondary);
+.page.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- MAIN CLICKER PAGE --- */
+.main-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+    text-align: center;
+    color: var(--text-primary);
     margin-bottom: 20px;
+}
+
+.total-coins-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.coin-icon {
+    width: 36px;
+    height: 36px;
+}
+
+.total-coins-value {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--text-primary);
 }
 
 .stats-group {
     display: flex;
-    justify-content: space-around;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--bg-tertiary);
-    margin-bottom: 15px;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 25px;
 }
 
 .stat-item {
@@ -95,7 +117,7 @@ body {
 }
 
 .stat-label {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-secondary);
     font-weight: 500;
 }
@@ -107,75 +129,52 @@ body {
     display: block;
 }
 
-.total-coins-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-}
-
-.coin-icon {
-    width: 32px;
-    height: 32px;
-}
-
-.total-coins-value {
-    font-size: 36px;
-    font-weight: 800;
-    color: var(--gold);
-    line-height: 1;
-}
-
 .clicker-zone {
-    flex-grow: 1;
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    position: relative;
-    /* For positioning floating coins */
 }
 
 .click-image {
     width: 280px;
     height: 280px;
     border-radius: 50%;
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-surface-light);
     background-size: cover;
     background-position: center;
     cursor: pointer;
-    transition: transform 0.1s ease-out;
-    border: 4px solid var(--bg-secondary);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-    /* Set the default girl image here */
+    transition: transform 0.1s ease-out, box-shadow 0.2s;
+    border: 3px solid var(--border-color);
+    box-shadow: 0 0 30px var(--primary-accent-glow);
     background-image: url('https://i1.sndcdn.com/avatars-zAo5N9j7XXVVwKPC-6lrkmw-t1080x1080.jpg');
 }
 
 .click-image:active {
     transform: scale(0.95);
+    box-shadow: 0 0 45px var(--primary-accent-glow);
 }
 
-/* Floating Coins Animation */
-#floating-coins-container {
+#floating-text-container {
+    /* Renamed from floating-coins-container */
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
-    overflow: hidden;
 }
 
-.floating-coin {
+.floating-text {
     position: absolute;
-    font-size: 24px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--gold);
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    animation: float-up 1.5s ease-out forwards;
-    pointer-events: none;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    animation: float-up-fade 1.5s ease-out forwards;
 }
 
-@keyframes float-up {
+@keyframes float-up-fade {
     from {
         transform: translateY(0);
         opacity: 1;
@@ -187,85 +186,26 @@ body {
     }
 }
 
-/* --- GENERIC PAGE STYLES --- */
-.page {
-    display: none;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.page.active {
-    display: block;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
+/* --- OTHER PAGES (UPGRADE, TOP, TRANSFER) --- */
 .page-title {
     font-size: 28px;
     font-weight: 800;
     text-align: center;
     margin-bottom: 30px;
-    color: var(--text-primary);
 }
 
-/* --- TOP PLAYERS PAGE --- */
-.leaderboard-list {
-    list-style: none;
-    /* Removes the default bullet points */
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.leaderboard-list li {
-    background: var(--bg-secondary);
-    border-radius: var(--border-radius-sm);
-    padding: 15px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    font-size: 16px;
-}
-
-.leaderboard-list .rank {
-    font-weight: 700;
-    color: var(--text-secondary);
-    width: 30px;
-    text-align: right;
-}
-
-.leaderboard-list .name {
-    flex-grow: 1;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.leaderboard-list .coins {
-    font-weight: 700;
-    color: var(--gold);
-}
-
-/* --- UPGRADES & TRANSFER PAGES --- */
 .upgrade-section,
 .transfer-form {
-    background: var(--bg-secondary);
+    background: var(--bg-surface);
     padding: 20px;
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius);
     margin-bottom: 20px;
+    border: 1px solid var(--border-color);
 }
 
 .upgrade-section h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
+    font-size: 18px;
+    margin: 0 0 15px;
 }
 
 .upgrade-info {
@@ -276,111 +216,66 @@ body {
     color: var(--text-secondary);
 }
 
-.upgrade-level,
-.upgrade-cost {
-    font-weight: 500;
-}
-
 .upgrade-cost span,
 .upgrade-level span {
     color: var(--text-primary);
     font-weight: 600;
 }
 
-.input-group {
-    margin-bottom: 20px;
+.leaderboard-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 14px;
-    color: var(--text-secondary);
-    font-weight: 500;
+.leaderboard-list li {
+    background: var(--bg-surface);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border-color);
 }
 
-input[type="text"],
-input[type="number"] {
-    width: 100%;
-    padding: 14px;
-    background: var(--bg-tertiary);
-    border: 1px solid transparent;
-    border-radius: var(--border-radius-sm);
-    color: var(--text-primary);
-    font-size: 16px;
-    font-family: var(--font-family);
-    transition: var(--transition-fast);
-}
-
-input[type="text"]:focus,
-input[type="number"]:focus {
-    outline: none;
-    border-color: var(--primary-accent);
-    box-shadow: 0 0 0 3px var(--primary-accent-glow);
-}
-
-button.upgrade-btn,
-button.transfer-btn {
-    width: 100%;
-    padding: 16px;
-    font-size: 16px;
+.leaderboard-list .rank {
     font-weight: 700;
-    color: white;
-    background: var(--primary-accent);
-    border: none;
-    border-radius: var(--border-radius-sm);
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-button:disabled {
-    background: var(--bg-tertiary);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
-}
-
-button:not(:disabled):hover {
-    filter: brightness(1.1);
-}
-
-button:not(:disabled):active {
-    transform: scale(0.98);
-}
-
-.transfer-message {
-    margin-top: 15px;
+    color: var(--text-secondary);
+    width: 25px;
     text-align: center;
-    font-weight: 500;
 }
 
-.transfer-message.success {
-    color: var(--success);
+.leaderboard-list .name {
+    flex-grow: 1;
+    font-weight: 600;
 }
 
-.transfer-message.error {
-    color: var(--error);
+.leaderboard-list .coins {
+    font-weight: 700;
+    color: var(--gold);
 }
 
+.input-group,
+button {
+    /* Styling for these is mostly fine, can be reused */
+}
 
-/* --- BOTTOM NAVIGATION BAR --- */
+/* --- BOTTOM NAVIGATION --- */
 .bottom-nav {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     height: 70px;
-    background: var(--bg-secondary);
-    display: flex;
-    justify-content: space-around;
-    padding: 5px 0;
-    padding-bottom: calc(5px + env(safe-area-inset-bottom));
-    /* Adjust for phone notches */
-    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
-    border-top: 1px solid var(--bg-tertiary);
+    background: #181818;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border-color);
 }
 
 .nav-btn {
-    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -389,24 +284,28 @@ button:not(:disabled):active {
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: var(--transition-fast);
+    transition: all 0.2s;
+    gap: 4px;
 }
 
 .nav-btn .nav-icon {
-    font-size: 24px;
-    line-height: 1;
+    font-size: 22px;
 }
 
 .nav-btn .nav-text {
     font-size: 11px;
-    margin-top: 4px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .nav-btn.active {
     color: var(--primary-accent);
-    transform: translateY(-3px);
 }
+
+.nav-btn:active {
+    transform: scale(0.9);
+}
+
+
 
 /* --- NOTIFICATIONS --- */
 #notificationContainer {

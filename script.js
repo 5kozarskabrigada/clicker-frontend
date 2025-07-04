@@ -116,6 +116,7 @@ function updateUI() {
 }
 
 clickImage.onclick = async (event) => {
+    tg.HapticFeedback.impactOccurred('light'); 
     try {
         const updatedUser = await apiRequest('/click', 'POST');
         userData = updatedUser;
@@ -125,7 +126,9 @@ clickImage.onclick = async (event) => {
 };
 
 upgradeClickBtn.onclick = async () => {
+    tg.HapticFeedback.notificationOccurred('success');
     try {
+
         const updatedUser = await apiRequest('/upgrade/click', 'POST');
         userData = updatedUser;
         updateUI();
@@ -329,28 +332,38 @@ function showFloatingCoin(x, y, amount) {
     setTimeout(() => coin.remove(), 1000);
 }
 
+// In script.js
+
 async function init() {
     try {
+        // Initial load from the server (this also calculates passive income)
         const response = await apiRequest('/user');
         userData = response;
+        updateUI();
 
+        // Check for achievements unlocked during the initial load
         if (response.newly_unlocked_achievements?.length > 0) {
             response.newly_unlocked_achievements.forEach(ach => {
                 showNotification(`Achievement Unlocked: ${ach.name}!`, 'success');
             });
         }
 
-        updateUI();
-
-        setInterval(() => {
-            if (userData && userData.coins_per_sec > 0) {
-                userData.coins += userData.coins_per_sec;
-                coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
-
-                upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
-                upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
+        // ---- NEW SMARTER UPDATE LOGIC ----
+        // This function will fetch the latest user data from the server.
+        const syncWithServer = async () => {
+            if (isLoading) return; // Don't sync if another action is in progress
+            try {
+                // The /user endpoint handles all passive income logic
+                const latestUserData = await apiRequest('/user');
+                userData = latestUserData;
+                updateUI();
+            } catch (error) {
+                console.warn("Periodic sync failed:", error.message);
             }
-        }, 1000);
+        };
+
+        // Sync with the server every 10 seconds to update coins and stats
+        setInterval(syncWithServer, 10000);
 
     } catch (e) {
         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
