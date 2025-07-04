@@ -2,124 +2,125 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <title>Clicker Pro</title>
-    <!-- Google Fonts for a premium feel -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap Empire</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <div id="app">
-        <!-- Main Application Content Area -->
         <div class="app-content">
-            <!-- Main Clicker Page -->
-            <section id="main" class="page active">
-                <div class="main-header">
-                    <div class="profile-info">
-                        <img id="user-avatar" src="https://i.imgur.com/8x5xG4i.png" alt="Avatar" class="avatar-sm">
-                        <span id="username-display">@username</span>
+            <!-- Main Game Screen -->
+            <section id="main-screen" class="screen active">
+                <div class="game-header">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Coins / Sec</div>
+                            <div id="coins-per-sec" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Coins / Tap</div>
+                            <div id="coins-per-tap" class="stat-value">1</div>
+                        </div>
                     </div>
-                    <div class="header-actions">
-                        <!-- Future buttons like settings can go here -->
-                    </div>
-                </div>
-
-                <div class="total-coins-container">
-                    <span id="coins" class="total-coins-value">0</span>
-                </div>
-
-                <div class="clicker-zone">
-                    <div id="clickImage" class="click-image">
-                        <!-- Character image is set via CSS -->
-                    </div>
-                    <div id="floating-text-container"></div>
-                </div>
-
-                <div class="energy-section">
-                    <div class="energy-label">⚡️ Energy</div>
-                    <div class="energy-bar-container">
-                        <div id="energy-bar" class="energy-bar"></div>
-                    </div>
-                    <div class="energy-value"><span id="energy-current">1000</span> / <span id="energy-max">1000</span>
+                    <div class="coin-display">
+                        <img src="https://i.imgur.com/8x5xG4i.png" alt="Coin" class="coin-icon">
+                        <div id="total-coins" class="coin-amount">0</div>
                     </div>
                 </div>
 
-                <div class="upgrades-container">
+                <div class="tap-container">
+                    <div id="tap-target" class="tap-target"></div>
+                    <div id="floating-coins-container"></div>
+                </div>
+            </section>
+
+            <!-- Upgrades Overlay -->
+            <div id="upgrades-overlay" class="upgrades-overlay">
+                <div class="upgrades-header">
+                    <h2 class="upgrades-title">Upgrades</h2>
+                    <button id="close-upgrades" class="close-upgrades">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="upgrade-category">
+                    <h3 class="category-title">
+                        <i class="fas fa-hand-pointer"></i>
+                        Tap Upgrades
+                    </h3>
+
                     <div class="upgrade-item">
-                        <div class="upgrade-icon">👆</div>
-                        <div class="upgrade-details">
-                            <h4>Multitap</h4>
-                            <p>+1 coin per tap</p>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Stronger Fingers</div>
+                            <div class="upgrade-description">Increase coins per tap</div>
+                            <div class="upgrade-level">Level: <span id="tap-level">0</span></div>
                         </div>
                         <div class="upgrade-action">
-                            <div class="upgrade-cost"><span id="upgradeClickCost">10</span> 🪙</div>
-                            <button id="upgradeClickBtn" class="upgrade-btn">Level <span
-                                    id="upgradeClickLevel">1</span></button>
+                            <div class="upgrade-cost">
+                                <span id="tap-cost">10</span>
+                                <i class="fas fa-coins text-gold"></i>
+                            </div>
+                            <button id="upgrade-tap" class="upgrade-btn">Upgrade</button>
                         </div>
                     </div>
+                </div>
+
+                <div class="upgrade-category">
+                    <h3 class="category-title">
+                        <i class="fas fa-clock"></i>
+                        Auto Upgrades
+                    </h3>
+
                     <div class="upgrade-item">
-                        <div class="upgrade-icon">🔋</div>
-                        <div class="upgrade-details">
-                            <h4>Energy Limit</h4>
-                            <p>+500 max energy</p>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Coin Miner</div>
+                            <div class="upgrade-description">Automatically generates coins</div>
+                            <div class="upgrade-level">Level: <span id="auto-level">0</span></div>
                         </div>
                         <div class="upgrade-action">
-                            <div class="upgrade-cost"><span id="upgradeEnergyCost">20</span> 🪙</div>
-                            <button id="upgradeEnergyBtn" class="upgrade-btn">Level <span
-                                    id="upgradeEnergyLevel">1</span></button>
+                            <div class="upgrade-cost">
+                                <span id="auto-cost">25</span>
+                                <i class="fas fa-coins text-gold"></i>
+                            </div>
+                            <button id="upgrade-auto" class="upgrade-btn">Upgrade</button>
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- Top Players Page -->
-            <section id="top" class="page">
-                <h1 class="page-title">🏆 Top Players</h1>
-                <ol id="topList" class="leaderboard-list"></ol>
-            </section>
-
-            <!-- Transfer Page -->
-            <section id="transfer" class="page">
-                <h1 class="page-title">💸 Transfer Coins</h1>
-                <div class="transfer-form">
-                    <div class="input-group">
-                        <label for="transferUsername">Recipient's Username</label>
-                        <input id="transferUsername" type="text" placeholder="@username" />
-                    </div>
-                    <div class="input-group">
-                        <label for="transferAmount">Amount to Send</label>
-                        <input id="transferAmount" type="number" placeholder="1000" min="1" />
-                    </div>
-                    <button id="transferBtn" class="transfer-btn">Send Coins</button>
-                    <p id="transferMessage" class="transfer-message"></p>
-                </div>
-            </section>
+            </div>
         </div>
 
-        <!-- Simplified Bottom Navigation -->
-        <nav class="bottom-nav">
+        <!-- Bottom Navigation -->
+        <nav class="nav-bar">
             <button id="nav-main" class="nav-btn active">
-                <span class="nav-icon">🏠</span>
+                <span class="nav-indicator"></span>
+                <i class="fas fa-home nav-icon"></i>
                 <span class="nav-text">Home</span>
             </button>
-            <button id="nav-top" class="nav-btn">
-                <span class="nav-icon">🏆</span>
-                <span class="nav-text">Top</span>
+            <button id="nav-upgrades" class="nav-btn">
+                <span class="nav-indicator"></span>
+                <i class="fas fa-arrow-up nav-icon"></i>
+                <span class="nav-text">Upgrades</span>
             </button>
-            <button id="nav-transfer" class="nav-btn">
-                <span class="nav-icon">💸</span>
-                <span class="nav-text">Transfer</span>
+            <button id="nav-leaderboard" class="nav-btn">
+                <span class="nav-indicator"></span>
+                <i class="fas fa-trophy nav-icon"></i>
+                <span class="nav-text">Leaderboard</span>
+            </button>
+            <button id="nav-shop" class="nav-btn">
+                <span class="nav-indicator"></span>
+                <i class="fas fa-store nav-icon"></i>
+                <span class="nav-text">Shop</span>
             </button>
         </nav>
-
-        <div id="notificationContainer"></div>
     </div>
+
     <script src="script.js"></script>
 </body>
 
