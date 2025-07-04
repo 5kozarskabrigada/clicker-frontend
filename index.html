@@ -3,43 +3,78 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>Clicker Pro</title>
-    <!-- Google Fonts for a nicer, modern font -->
+    <!-- Google Fonts for a premium feel -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
     <div id="app">
+        <!-- Main Application Content Area -->
         <div class="app-content">
             <!-- Main Clicker Page -->
             <section id="main" class="page active">
                 <div class="main-header">
-                    <div class="stats-group">
-                        <div class="stat-item">
-                            <span class="stat-label">Coins / Sec</span>
-                            <span id="coinsPerSec" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Coins / Click</span>
-                            <span id="coinsPerClick" class="stat-value">1</span>
-                        </div>
+                    <div class="profile-info">
+                        <img id="user-avatar" src="https://i.imgur.com/8x5xG4i.png" alt="Avatar" class="avatar-sm">
+                        <span id="username-display">@username</span>
                     </div>
-                    <div class="total-coins-container">
-                        <img src="https://i.imgur.com/8x5xG4i.png" alt="Coin" class="coin-icon">
-                        <span id="coins" class="total-coins-value">0</span>
+                    <div class="header-actions">
+                        <!-- Future buttons like settings can go here -->
                     </div>
+                </div>
+
+                <div class="total-coins-container">
+                    <span id="coins" class="total-coins-value">0</span>
                 </div>
 
                 <div class="clicker-zone">
                     <div id="clickImage" class="click-image">
-                        <!-- The character image will be set via CSS -->
+                        <!-- Character image is set via CSS -->
                     </div>
-                    <div id="floating-coins-container"></div>
+                    <div id="floating-text-container"></div>
+                </div>
+
+                <div class="energy-section">
+                    <div class="energy-label">⚡️ Energy</div>
+                    <div class="energy-bar-container">
+                        <div id="energy-bar" class="energy-bar"></div>
+                    </div>
+                    <div class="energy-value"><span id="energy-current">1000</span> / <span id="energy-max">1000</span>
+                    </div>
+                </div>
+
+                <div class="upgrades-container">
+                    <div class="upgrade-item">
+                        <div class="upgrade-icon">👆</div>
+                        <div class="upgrade-details">
+                            <h4>Multitap</h4>
+                            <p>+1 coin per tap</p>
+                        </div>
+                        <div class="upgrade-action">
+                            <div class="upgrade-cost"><span id="upgradeClickCost">10</span> 🪙</div>
+                            <button id="upgradeClickBtn" class="upgrade-btn">Level <span
+                                    id="upgradeClickLevel">1</span></button>
+                        </div>
+                    </div>
+                    <div class="upgrade-item">
+                        <div class="upgrade-icon">🔋</div>
+                        <div class="upgrade-details">
+                            <h4>Energy Limit</h4>
+                            <p>+500 max energy</p>
+                        </div>
+                        <div class="upgrade-action">
+                            <div class="upgrade-cost"><span id="upgradeEnergyCost">20</span> 🪙</div>
+                            <button id="upgradeEnergyBtn" class="upgrade-btn">Level <span
+                                    id="upgradeEnergyLevel">1</span></button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -47,28 +82,6 @@
             <section id="top" class="page">
                 <h1 class="page-title">🏆 Top Players</h1>
                 <ol id="topList" class="leaderboard-list"></ol>
-            </section>
-
-            <!-- Upgrades Page -->
-            <section id="upgrade" class="page">
-                <h1 class="page-title">⚙️ Upgrades</h1>
-                <div class="upgrade-section">
-                    <h3>Click Power</h3>
-                    <div class="upgrade-info">
-                        <div class="upgrade-level">Level: <span id="upgradeClickLevel">0</span></div>
-                        <div class="upgrade-cost">Cost: <span id="upgradeClickCost">10</span> 🪙</div>
-                    </div>
-                    <button id="upgradeClickBtn" class="upgrade-btn">Upgrade</button>
-                </div>
-
-                <div class="upgrade-section">
-                    <h3>Auto Income</h3>
-                    <div class="upgrade-info">
-                        <div class="upgrade-level">Level: <span id="upgradeAutoLevel">0</span></div>
-                        <div class="upgrade-cost">Cost: <span id="upgradeAutoCost">20</span> 🪙</div>
-                    </div>
-                    <button id="upgradeAutoBtn" class="upgrade-btn">Upgrade</button>
-                </div>
             </section>
 
             <!-- Transfer Page -->
@@ -89,19 +102,15 @@
             </section>
         </div>
 
-        <!-- Bottom Navigation -->
+        <!-- Simplified Bottom Navigation -->
         <nav class="bottom-nav">
             <button id="nav-main" class="nav-btn active">
-                <span class="nav-icon">🖱️</span>
-                <span class="nav-text">Click</span>
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">Home</span>
             </button>
             <button id="nav-top" class="nav-btn">
                 <span class="nav-icon">🏆</span>
                 <span class="nav-text">Top</span>
-            </button>
-            <button id="nav-upgrade" class="nav-btn">
-                <span class="nav-icon">⚙️</span>
-                <span class="nav-text">Upgrades</span>
             </button>
             <button id="nav-transfer" class="nav-btn">
                 <span class="nav-icon">💸</span>
@@ -111,8 +120,6 @@
 
         <div id="notificationContainer"></div>
     </div>
-
-    <!-- Your script.js is fine, no need to include supabase.js here anymore -->
     <script src="script.js"></script>
 </body>
 
