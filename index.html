@@ -2,125 +2,117 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tap Empire</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Clicker Pro</title>
+    <!-- Google Fonts for a nicer, modern font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
     <div id="app">
         <div class="app-content">
-            <!-- Main Game Screen -->
-            <section id="main-screen" class="screen active">
-                <div class="game-header">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Coins / Sec</div>
-                            <div id="coins-per-sec" class="stat-value">0</div>
+            <!-- Main Clicker Page -->
+            <section id="main" class="page active">
+                <div class="main-header">
+                    <div class="stats-group">
+                        <div class="stat-item">
+                            <span class="stat-label">Coins / Sec</span>
+                            <span id="coinsPerSec" class="stat-value">0</span>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Coins / Tap</div>
-                            <div id="coins-per-tap" class="stat-value">1</div>
+                        <div class="stat-item">
+                            <span class="stat-label">Coins / Click</span>
+                            <span id="coinsPerClick" class="stat-value">1</span>
                         </div>
                     </div>
-                    <div class="coin-display">
+                    <div class="total-coins-container">
                         <img src="https://i.imgur.com/8x5xG4i.png" alt="Coin" class="coin-icon">
-                        <div id="total-coins" class="coin-amount">0</div>
+                        <span id="coins" class="total-coins-value">0</span>
                     </div>
                 </div>
 
-                <div class="tap-container">
-                    <div id="tap-target" class="tap-target"></div>
+                <div class="clicker-zone">
+                    <div id="clickImage" class="click-image">
+                        <!-- The character image will be set via CSS -->
+                    </div>
                     <div id="floating-coins-container"></div>
                 </div>
             </section>
 
-            <!-- Upgrades Overlay -->
-            <div id="upgrades-overlay" class="upgrades-overlay">
-                <div class="upgrades-header">
-                    <h2 class="upgrades-title">Upgrades</h2>
-                    <button id="close-upgrades" class="close-upgrades">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+            <!-- Top Players Page -->
+            <section id="top" class="page">
+                <h1 class="page-title">🏆 Top Players</h1>
+                <ol id="topList" class="leaderboard-list"></ol>
+            </section>
 
-                <div class="upgrade-category">
-                    <h3 class="category-title">
-                        <i class="fas fa-hand-pointer"></i>
-                        Tap Upgrades
-                    </h3>
-
-                    <div class="upgrade-item">
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">Stronger Fingers</div>
-                            <div class="upgrade-description">Increase coins per tap</div>
-                            <div class="upgrade-level">Level: <span id="tap-level">0</span></div>
-                        </div>
-                        <div class="upgrade-action">
-                            <div class="upgrade-cost">
-                                <span id="tap-cost">10</span>
-                                <i class="fas fa-coins text-gold"></i>
-                            </div>
-                            <button id="upgrade-tap" class="upgrade-btn">Upgrade</button>
-                        </div>
+            <!-- Upgrades Page -->
+            <section id="upgrade" class="page">
+                <h1 class="page-title">⚙️ Upgrades</h1>
+                <div class="upgrade-section">
+                    <h3>Click Power</h3>
+                    <div class="upgrade-info">
+                        <div class="upgrade-level">Level: <span id="upgradeClickLevel">0</span></div>
+                        <div class="upgrade-cost">Cost: <span id="upgradeClickCost">10</span> 🪙</div>
                     </div>
+                    <button id="upgradeClickBtn" class="upgrade-btn">Upgrade</button>
                 </div>
 
-                <div class="upgrade-category">
-                    <h3 class="category-title">
-                        <i class="fas fa-clock"></i>
-                        Auto Upgrades
-                    </h3>
-
-                    <div class="upgrade-item">
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">Coin Miner</div>
-                            <div class="upgrade-description">Automatically generates coins</div>
-                            <div class="upgrade-level">Level: <span id="auto-level">0</span></div>
-                        </div>
-                        <div class="upgrade-action">
-                            <div class="upgrade-cost">
-                                <span id="auto-cost">25</span>
-                                <i class="fas fa-coins text-gold"></i>
-                            </div>
-                            <button id="upgrade-auto" class="upgrade-btn">Upgrade</button>
-                        </div>
+                <div class="upgrade-section">
+                    <h3>Auto Income</h3>
+                    <div class="upgrade-info">
+                        <div class="upgrade-level">Level: <span id="upgradeAutoLevel">0</span></div>
+                        <div class="upgrade-cost">Cost: <span id="upgradeAutoCost">20</span> 🪙</div>
                     </div>
+                    <button id="upgradeAutoBtn" class="upgrade-btn">Upgrade</button>
                 </div>
-            </div>
+            </section>
+
+            <!-- Transfer Page -->
+            <section id="transfer" class="page">
+                <h1 class="page-title">💸 Transfer Coins</h1>
+                <div class="transfer-form">
+                    <div class="input-group">
+                        <label for="transferUsername">Recipient's Username</label>
+                        <input id="transferUsername" type="text" placeholder="@username" />
+                    </div>
+                    <div class="input-group">
+                        <label for="transferAmount">Amount to Send</label>
+                        <input id="transferAmount" type="number" placeholder="1000" min="1" />
+                    </div>
+                    <button id="transferBtn" class="transfer-btn">Send Coins</button>
+                    <p id="transferMessage" class="transfer-message"></p>
+                </div>
+            </section>
         </div>
 
         <!-- Bottom Navigation -->
-        <nav class="nav-bar">
+        <nav class="bottom-nav">
             <button id="nav-main" class="nav-btn active">
-                <span class="nav-indicator"></span>
-                <i class="fas fa-home nav-icon"></i>
-                <span class="nav-text">Home</span>
+                <span class="nav-icon">🖱️</span>
+                <span class="nav-text">Click</span>
             </button>
-            <button id="nav-upgrades" class="nav-btn">
-                <span class="nav-indicator"></span>
-                <i class="fas fa-arrow-up nav-icon"></i>
+            <button id="nav-top" class="nav-btn">
+                <span class="nav-icon">🏆</span>
+                <span class="nav-text">Top</span>
+            </button>
+            <button id="nav-upgrade" class="nav-btn">
+                <span class="nav-icon">⚙️</span>
                 <span class="nav-text">Upgrades</span>
             </button>
-            <button id="nav-leaderboard" class="nav-btn">
-                <span class="nav-indicator"></span>
-                <i class="fas fa-trophy nav-icon"></i>
-                <span class="nav-text">Leaderboard</span>
-            </button>
-            <button id="nav-shop" class="nav-btn">
-                <span class="nav-indicator"></span>
-                <i class="fas fa-store nav-icon"></i>
-                <span class="nav-text">Shop</span>
+            <button id="nav-transfer" class="nav-btn">
+                <span class="nav-icon">💸</span>
+                <span class="nav-text">Transfer</span>
             </button>
         </nav>
+
+        <div id="notificationContainer"></div>
     </div>
 
+    <!-- Your script.js is fine, no need to include supabase.js here anymore -->
     <script src="script.js"></script>
 </body>
 
