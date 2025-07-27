@@ -195,7 +195,7 @@ async function loadImages() {
             imageCard.className = `image-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`;
 
             const imagePreview = document.createElement('div');
-            imagePreview.className = `image-preview image-${image.id}`; // Use a class for CSS background-image
+            imagePreview.className = `image-preview image-${image.id}`;
 
             const imageInfo = document.createElement('div');
             imageInfo.className = 'image-info';
@@ -332,29 +332,23 @@ function showFloatingCoin(x, y, amount) {
     setTimeout(() => coin.remove(), 1000);
 }
 
-// In script.js
-// In script.js
-
-// In script.js
 
 async function init() {
     try {
-        // Initial load from the server to get the starting state
+       
         const initialUserData = await apiRequest('/user');
         userData = initialUserData;
         updateUI();
 
-        // --- FINAL & CORRECT UPDATE LOGIC ---
         let lastServerCoins = userData.coins;
         let lastSyncTime = Date.now();
         let visualCoinUpdater;
 
         const startVisualUpdates = () => {
-            if (visualCoinUpdater) clearInterval(visualCoinUpdater); // Clear any old interval
+            if (visualCoinUpdater) clearInterval(visualCoinUpdater);
 
             visualCoinUpdater = setInterval(() => {
                 if (userData && userData.coins_per_sec > 0) {
-                    // Visually increment the displayed coins without touching the authoritative `userData`
                     const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
                     const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
                     coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
@@ -367,24 +361,23 @@ async function init() {
 
             try {
                 const latestUserData = await apiRequest('/user');
-                userData = latestUserData; // Update with the true data from server
+                userData = latestUserData; 
 
-                // This is the magic: Calculate what the coin count *should* be visually
+
                 const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
                 const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
                 const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
                 const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
 
-                // Only correct the display if it has drifted significantly from what's expected.
-                // This prevents jumps from clicks while still correcting for major desyncs.
+
                 if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
                     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
                 }
 
-                // Update the rest of the UI with fresh data
+
                 updateUI();
 
-                // Reset the baseline for the next sync cycle
+
                 lastServerCoins = userData.coins;
                 lastSyncTime = Date.now();
 
@@ -393,7 +386,6 @@ async function init() {
             }
         };
 
-        // Start the visual updates and periodic server syncs
         startVisualUpdates();
         setInterval(syncWithServer, 15000);
 

@@ -14,77 +14,87 @@
 
 <body>
     <div id="app">
-        <!-- Main Application Content Area -->
         <div class="app-content">
-
-            <!-- This container will hold the dynamically shown page -->
             <div id="page-container">
 
-                <!-- Main Clicker Page (Initially visible) -->
                 <section id="main" class="page active">
                     <div class="main-header">
                         <h2>Coin Clicker</h2>
                     </div>
+
                     <div class="total-coins-container">
-                        <!-- Using a reliable, high-quality coin image -->
                         <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
                         <span id="coins" class="total-coins-value">0</span>
                     </div>
+
                     <div class="stats-group">
                         <div class="stat-item">
                             <span class="stat-label">per click</span>
                             <span id="coinsPerClick" class="stat-value">1</span>
                         </div>
+
                         <div class="stat-item">
                             <span class="stat-label">per second</span>
                             <span id="coinsPerSec" class="stat-value">0</span>
                         </div>
                     </div>
+
                     <div class="clicker-zone">
                         <div id="clickImage" class="click-image"></div>
                         <div id="floating-text-container"></div>
                     </div>
+
                 </section>
 
-                <!-- Upgrades Page -->
+
                 <section id="upgrade" class="page">
                     <h1 class="page-title">⚙️ Upgrades</h1>
                     <div class="upgrade-section">
+
                         <h3>Click Power</h3>
+
                         <div class="upgrade-info">
                             <div class="upgrade-level">Level: <span id="upgradeClickLevel">0</span></div>
                             <div class="upgrade-cost">Cost: <span id="upgradeClickCost">10</span> 🪙</div>
                         </div>
+
                         <button id="upgradeClickBtn" class="action-button">Upgrade</button>
                     </div>
+
                     <div class="upgrade-section">
                         <h3>Auto Income</h3>
+
                         <div class="upgrade-info">
                             <div class="upgrade-level">Level: <span id="upgradeAutoLevel">0</span></div>
                             <div class="upgrade-cost">Cost: <span id="upgradeAutoCost">20</span> 🪙</div>
                         </div>
+                        
                         <button id="upgradeAutoBtn" class="action-button">Upgrade</button>
                     </div>
                 </section>
 
-                <!-- Top Players Page -->
+
                 <section id="top" class="page">
                     <h1 class="page-title">🏆 Top Players</h1>
                     <ol id="topList" class="leaderboard-list"></ol>
                 </section>
 
-                <!-- Transfer Page -->
+
                 <section id="transfer" class="page">
+
                     <h1 class="page-title">💸 Transfer Coins</h1>
+
                     <div class="transfer-form">
                         <div class="input-group">
                             <label for="transferUsername">Recipient's Username</label>
                             <input id="transferUsername" type="text" placeholder="@username" />
                         </div>
+
                         <div class="input-group">
                             <label for="transferAmount">Amount to Send</label>
                             <input id="transferAmount" type="number" placeholder="1000" min="1" />
                         </div>
+
                         <button id="transferBtn" class="action-button">Send Coins</button>
                         <p id="transferMessage" class="transfer-message"></p>
                     </div>
@@ -92,8 +102,9 @@
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
+
         <nav class="bottom-nav">
+            
             <button id="nav-main" class="nav-btn active">
                 <span class="nav-icon">🖱️</span>
                 <span class="nav-text">Click</span>
