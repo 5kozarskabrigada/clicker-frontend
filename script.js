@@ -403,7 +403,7 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const API_URL = 'https://clicker-backend-cy7w.onrender.com';
+const API_URL = 'https://clicker-backend-chjq.onrender.com';
 let userData = null;
 
 
