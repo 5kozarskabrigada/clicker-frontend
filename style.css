@@ -1,6 +1,6 @@
 :root {
 
-    font-size: 12px;
+    font-size: 13px;
     --bg-primary: #121212;
     --bg-surface: #1e1e1e;
     --bg-surface-light: #2a2a2a;
@@ -382,6 +382,85 @@ body {
     flex-direction: column;
     gap: 0.625rem;
     align-items: center;
+}
+
+.upgrade-details {
+    flex-grow: 1;
+}
+
+.upgrade-action {
+    flex-shrink: 0;
+}
+
+
+
+.top-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.top-tab-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+
+.transfer-form {
+    background: var(--bg-surface);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    max-width: 25rem;
+    margin: 0 auto;
+}
+
+.input-group {
+    margin-bottom: 1.25rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 3px var(--primary-accent-glow);
+}
+
+.transfer-message {
+    margin-top: 1rem;
+    text-align: center;
+    font-weight: 500;
+    min-height: 1.25rem;
+}
+
+.transfer-message.success {
+    color: var(--success);
+}
+
+.transfer-message.error {
+    color: var(--error);
 }
 
 .notification {
