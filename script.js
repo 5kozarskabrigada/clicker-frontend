@@ -6,6 +6,8 @@ const API_URL = 'https://clicker-backend-chjq.onrender.com';
 let userData = null;
 let isLoading = false;
 let isClicking = false;
+let pendingClicks = 0;
+let isSyncing = false;
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -178,9 +180,10 @@ function calculateCost(base, multiplier, level) {
 
 function updateUI() {
     if (!userData) return;
-    coinsEl.textContent = parseFloat(userData.coins).toFixed(12);
-    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(12);
-    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(12);
+
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
 
     for (const id in upgrades) {
@@ -194,7 +197,6 @@ function updateUI() {
         if (button) button.disabled = userData.coins < cost;
     }
 }
-
 function calculateCost(base, multiplier, level) {
     return Math.floor(base * Math.pow(multiplier, level));
 }
@@ -218,27 +220,49 @@ clickImage.onclick = (event) => {
 
     tg.HapticFeedback.impactOccurred('light');
 
-    const coinsBeforeClick = userData.coins;
-
     userData.coins += userData.coins_per_click;
-    updateUI(); 
-    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
+    updateUI();
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+    pendingClicks++;
 
-    apiRequest('/click', 'POST')
-        .then(updatedUserFromServer => {
-            const localPassiveGain = userData.coins - (coinsBeforeClick + userData.coins_per_click);
-
-            userData = updatedUserFromServer; 
-            userData.coins += localPassiveGain; 
-
-            updateUI();
-        })
-        .catch(err => {
-            console.error("Click could not be saved to server:", err);
-            userData.coins = coinsBeforeClick;
-            updateUI();
-        });
+    syncClicksToServer();
 };
+
+async function syncClicksToServer() {
+    if (isSyncing || pendingClicks === 0) {
+        return;
+    }
+
+    isSyncing = true;
+
+    const clicksToSync = pendingClicks;
+
+    try {
+        for (let i = 0; i < clicksToSync; i++) {
+            await apiRequest('/click', 'POST');
+        }
+
+        pendingClicks -= clicksToSync;
+
+    } 
+    
+    catch (err) {
+        console.error("Failed to sync clicks with server:", err);
+    } 
+    
+    finally {
+        isSyncing = false;
+
+        if (pendingClicks > 0) {
+            syncClicksToServer();
+        } 
+        else {
+            const latestUserData = await apiRequest('/user');
+            userData = latestUserData;
+            updateUI();
+        }
+    }
+}
 
 
 // clickImage.onclick = (event) => {
@@ -309,15 +333,15 @@ function openTopTab(evt, sortBy) {
 
 async function loadTopPlayers(sortBy = 'coins') {
     try {
-        const players = await apiRequest(`/top?sortBy=${sortBy}`);
+        const topListEl = document.getElementById('topList');
         topListEl.innerHTML = '<li>Loading...</li>';
+        const players = await apiRequest(`/top?sortBy=${sortBy}`);
 
         const formatValue = (value) => {
-            return sortBy === 'coins' ? parseFloat(value).toLocaleString() + ' 🪙' : parseFloat(value).toFixed(10);
+            return parseFloat(value).toFixed(10);
         };
 
-        topListEl.innerHTML = ''; 
-
+        topListEl.innerHTML = '';
         players.forEach((player, idx) => {
             const li = document.createElement('li');
             li.innerHTML = `
@@ -327,9 +351,7 @@ async function loadTopPlayers(sortBy = 'coins') {
             `;
             topListEl.appendChild(li);
         });
-    } 
-    
-    catch (e) {
+    } catch (e) {
         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
     }
 }

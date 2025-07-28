@@ -28,8 +28,8 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
-    height: 100dvh;
-    width: 100vw;
+    height: 150dvh;
+    width: 150vw;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
