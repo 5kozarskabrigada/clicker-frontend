@@ -143,18 +143,49 @@ function calculateCost(base, multiplier, level) {
 }
 
 
+// function updateUI() {
+//     if (!userData) return;
+
+//     coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
+//     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
+//     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+//     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(10) + ' / hr';
+
+//     for (const id in upgrades) {
+//         const level = userData[`${id}_level`] || 0;
+//         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+//         const levelEl = document.getElementById(`${id}_level`);
+//         const costEl = document.getElementById(`${id}_cost`);
+//         const button = document.querySelector(`#upgrade_${id} .action-button`);
+//         if (levelEl) levelEl.textContent = level;
+//         if (costEl) costEl.textContent = cost.toLocaleString();
+//         if (button) button.disabled = userData.coins < cost;
+//     }
+
+//     clickImage.onclick = (event) => {
+//         if (!userData) return;
+//         tg.HapticFeedback.impactOccurred('light');
+//         userData.coins += userData.coins_per_click;
+
+//         coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
+//         showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
+//         apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
+//     };
+// }
+
+
 function updateUI() {
     if (!userData) return;
-
-    coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
-
-    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
-    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(12);
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(12);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(12);
     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
-        const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+        const cost = Math.floor(upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level));
         const levelEl = document.getElementById(`${id}_level`);
         const costEl = document.getElementById(`${id}_cost`);
         const button = document.querySelector(`#upgrade_${id} .action-button`);
@@ -162,32 +193,12 @@ function updateUI() {
         if (costEl) costEl.textContent = cost.toLocaleString();
         if (button) button.disabled = userData.coins < cost;
     }
-
-    clickImage.onclick = (event) => {
-        if (!userData) return;
-        tg.HapticFeedback.impactOccurred('light');
-        userData.coins += userData.coins_per_click;
-
-        coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
-
-        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
-        apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
-    };
 }
 
 function calculateCost(base, multiplier, level) {
     return Math.floor(base * Math.pow(multiplier, level));
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    for (const id in upgrades) {
-        const button = document.querySelector(`#upgrade_${id} .action-button`);
-        if (button) {
-            button.onclick = () => purchaseUpgrade(id);
-        }
-    }
-});
 
 async function purchaseUpgrade(upgradeId) {
     tg.HapticFeedback.notificationOccurred('success');
@@ -201,21 +212,50 @@ async function purchaseUpgrade(upgradeId) {
     }
 }
 
+
 clickImage.onclick = (event) => {
     if (!userData) return;
 
     tg.HapticFeedback.impactOccurred('light');
 
+    const coinsBeforeClick = userData.coins;
+
     userData.coins += userData.coins_per_click;
+    updateUI(); 
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
 
-    coinsEl.textContent = parseFloat(userData.coins)
-    .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
-
-    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
     apiRequest('/click', 'POST')
-    .then(user => { userData = user; })
-    .catch(err => console.error(err));
+        .then(updatedUserFromServer => {
+            const localPassiveGain = userData.coins - (coinsBeforeClick + userData.coins_per_click);
+
+            userData = updatedUserFromServer; 
+            userData.coins += localPassiveGain; 
+
+            updateUI();
+        })
+        .catch(err => {
+            console.error("Click could not be saved to server:", err);
+            userData.coins = coinsBeforeClick;
+            updateUI();
+        });
 };
+
+
+// clickImage.onclick = (event) => {
+//     if (!userData) return;
+
+//     tg.HapticFeedback.impactOccurred('light');
+
+//     userData.coins += userData.coins_per_click;
+
+//     coinsEl.textContent = parseFloat(userData.coins)
+//     .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+
+//     showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+//     apiRequest('/click', 'POST')
+//     .then(user => { userData = user; })
+//     .catch(err => console.error(err));
+// };
 
 // upgradeClickBtn.onclick = async () => {
 //     tg.HapticFeedback.notificationOccurred('success');
@@ -294,12 +334,21 @@ async function loadTopPlayers(sortBy = 'coins') {
     }
 }
 
+// function startPassiveIncome() {
+//     setInterval(() => {
+//         if (userData && userData.coins_per_sec > 0) {
+//             userData.coins += userData.coins_per_sec;
+//             coinsEl.textContent = parseFloat(userData.coins)
+//             .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+//         }
+//     }, 1000);
+// }
+
 function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
             userData.coins += userData.coins_per_sec;
-            coinsEl.textContent = parseFloat(userData.coins)
-            .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+            updateUI(); 
         }
     }, 1000);
 }
@@ -517,17 +566,38 @@ function showFloatingCoin(x, y, amount) {
 // }
 
 
+// async function init() {
+//     const loadingOverlay = document.getElementById('loading-overlay');
+//     const loadingText = document.getElementById('loading-text');
+//     if (!loadingOverlay) { console.error("Loading overlay not found!"); return; }
+
+//     try {
+//         const bonusData = await apiRequest('/claim-bonus', 'POST');
+//         if (bonusData && bonusData.earned_coins > 0) {
+//             showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(10)} coins.`, 'success');
+//         }
+
+//         const initialUserData = await apiRequest('/user');
+//         if (!initialUserData) throw new Error("Received empty user data from server.");
+
+//         userData = initialUserData;
+//         updateUI();
+//         loadingOverlay.classList.remove('active');
+//         startPassiveIncome();
+
+//     } catch (e) {
+//         loadingText.innerHTML = `Connection Error<br/><small>Please restart the app inside Telegram.</small>`;
+//         console.error("Initialization failed:", e);
+//     }
+// }
+
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
-    if (!loadingOverlay) { console.error("Loading overlay not found!"); return; }
+    if (!loadingOverlay) { console.error("FATAL: Loading overlay not found!"); return; }
 
     try {
-        const bonusData = await apiRequest('/claim-bonus', 'POST');
-        if (bonusData && bonusData.earned_coins > 0) {
-            showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(8)} coins.`, 'success');
-        }
-
+        await apiRequest('/claim-bonus', 'POST');
         const initialUserData = await apiRequest('/user');
         if (!initialUserData) throw new Error("Received empty user data from server.");
 
@@ -535,14 +605,18 @@ async function init() {
         updateUI();
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
-
     } catch (e) {
-        loadingText.innerHTML = `Connection Error<br/><small>Please restart the app inside Telegram.</small>`;
+        loadingText.innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
         console.error("Initialization failed:", e);
     }
 }
 
-
+document.addEventListener('DOMContentLoaded', () => {
+    for (const id in upgrades) {
+        const button = document.querySelector(`#upgrade_${id} .action-button`);
+        if (button) button.onclick = () => purchaseUpgrade(id);
+    }
+});
 
 tg.ready();
 init();
