@@ -32,11 +32,18 @@ const upgrades = {
     'click_tier_3': { base_cost: 10000, cost_mult: 1.15 },
     'click_tier_4': { base_cost: 250000, cost_mult: 1.15 },
     'click_tier_5': { base_cost: 5000000, cost_mult: 1.15 },
+
     'auto_tier_1': { base_cost: 100, cost_mult: 1.15 },
     'auto_tier_2': { base_cost: 2500, cost_mult: 1.15 },
     'auto_tier_3': { base_cost: 50000, cost_mult: 1.15 },
     'auto_tier_4': { base_cost: 1000000, cost_mult: 1.15 },
     'auto_tier_5': { base_cost: 20000000, cost_mult: 1.15 },
+
+    'offline_tier_1': { base_cost: 5000, cost_mult: 1.20 },
+    'offline_tier_2': { base_cost: 100000, cost_mult: 1.20 },
+    'offline_tier_3': { base_cost: 2500000, cost_mult: 1.20 },
+    'offline_tier_4': { base_cost: 50000000, cost_mult: 1.20 },
+    'offline_tier_5': { base_cost: 1000000000, cost_mult: 1.20 },
 };
 
 const pages = {
@@ -55,6 +62,8 @@ const navButtons = {
     achievements: document.getElementById('nav-achievements'),
     transfer: document.getElementById('nav-transfer'), 
 };
+
+const offlineRateEl = document.getElementById('offlineRate');
 
 function showPage(pageId) {
     if (!pages[pageId] || !navButtons[pageId]) return;
@@ -138,13 +147,17 @@ function updateUI() {
     coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+    offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
 
-        document.getElementById(`${id}_level`).textContent = level;
-        document.getElementById(`${id}_cost`).textContent = cost.toLocaleString();
+        const levelEl = document.getElementById(`${id}_level`);
+        if (levelEl) levelEl.textContent = level;
+
+        const costEl = document.getElementById(`${id}_cost`);
+        if (costEl) costEl.textContent = cost.toLocaleString();
 
         const button = document.querySelector(`#upgrade_${id} .action-button`);
         if (button) {
@@ -196,25 +209,25 @@ clickImage.onclick = (event) => {
         });
 };
 
-upgradeClickBtn.onclick = async () => {
-    tg.HapticFeedback.notificationOccurred('success');
-    try {
+// upgradeClickBtn.onclick = async () => {
+//     tg.HapticFeedback.notificationOccurred('success');
+//     try {
 
-        const updatedUser = await apiRequest('/upgrade/click', 'POST');
-        userData = updatedUser;
-        updateUI();
-        showNotification('Click power upgraded!', 'success');
-    } catch (e) { }
-};
+//         const updatedUser = await apiRequest('/upgrade/click', 'POST');
+//         userData = updatedUser;
+//         updateUI();
+//         showNotification('Click power upgraded!', 'success');
+//     } catch (e) { }
+// };
 
-upgradeAutoBtn.onclick = async () => {
-    try {
-        const updatedUser = await apiRequest('/upgrade/auto', 'POST');
-        userData = updatedUser;
-        updateUI();
-        showNotification('Auto income upgraded!', 'success');
-    } catch (e) {}
-};
+// upgradeAutoBtn.onclick = async () => {
+//     try {
+//         const updatedUser = await apiRequest('/upgrade/auto', 'POST');
+//         userData = updatedUser;
+//         updateUI();
+//         showNotification('Auto income upgraded!', 'success');
+//     } catch (e) {}
+// };
 
 transferBtn.onclick = async () => {
     const toUsername = transferUsernameEl.value.trim().replace(/^@/, '');
@@ -404,66 +417,91 @@ function showFloatingCoin(x, y, amount) {
 }
 
 
-async function init() {
-    try {
+// async function init() {
+//     try {
        
+//         const initialUserData = await apiRequest('/user');
+//         userData = initialUserData;
+//         updateUI();
+
+//         let lastServerCoins = userData.coins;
+//         let lastSyncTime = Date.now();
+//         let visualCoinUpdater;
+
+//         const startVisualUpdates = () => {
+//             if (visualCoinUpdater) clearInterval(visualCoinUpdater);
+
+//             visualCoinUpdater = setInterval(() => {
+//                 if (userData && userData.coins_per_sec > 0) {
+//                     const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+//                     const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
+//                     coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
+//                 }
+//             }, 1000);
+//         };
+
+//         const syncWithServer = async () => {
+//             if (isLoading) return;
+
+//             try {
+//                 const latestUserData = await apiRequest('/user');
+//                 userData = latestUserData; 
+
+
+//                 const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
+//                 const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
+//                 const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
+//                 const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+
+
+//                 if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
+//                     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+//                 }
+
+
+//                 updateUI();
+
+
+//                 lastServerCoins = userData.coins;
+//                 lastSyncTime = Date.now();
+
+//             } catch (error) {
+//                 console.warn("Periodic sync failed:", error.message);
+//             }
+//         };
+
+//         startVisualUpdates();
+//         setInterval(syncWithServer, 15000);
+
+//     } catch (e) {
+//         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
+//     }
+// }
+
+
+async function init() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loadingText = document.getElementById('loading-text');
+
+    try {
+        const bonusData = await apiRequest('/api/claim-bonus', 'POST');
+        if (bonusData && bonusData.earned_coins > 0) {
+            showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(8)} coins.`, 'success');
+        }
+
         const initialUserData = await apiRequest('/user');
+        if (!initialUserData) throw new Error("Received empty user data from server.");
+
         userData = initialUserData;
         updateUI();
-
-        let lastServerCoins = userData.coins;
-        let lastSyncTime = Date.now();
-        let visualCoinUpdater;
-
-        const startVisualUpdates = () => {
-            if (visualCoinUpdater) clearInterval(visualCoinUpdater);
-
-            visualCoinUpdater = setInterval(() => {
-                if (userData && userData.coins_per_sec > 0) {
-                    const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
-                    const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
-                    coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
-                }
-            }, 1000);
-        };
-
-        const syncWithServer = async () => {
-            if (isLoading) return;
-
-            try {
-                const latestUserData = await apiRequest('/user');
-                userData = latestUserData; 
-
-
-                const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
-                const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
-                const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
-                const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
-
-
-                if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
-                    coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
-                }
-
-
-                updateUI();
-
-
-                lastServerCoins = userData.coins;
-                lastSyncTime = Date.now();
-
-            } catch (error) {
-                console.warn("Periodic sync failed:", error.message);
-            }
-        };
-
-        startVisualUpdates();
-        setInterval(syncWithServer, 15000);
-
+        loadingOverlay.classList.remove('active');
+        startPassiveIncome();
     } catch (e) {
-        document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
+        loadingText.innerHTML = `Connection Error<br/><small>Please open this app inside Telegram.</small>`;
+        console.error("Initialization failed:", e);
     }
 }
+
 
 tg.ready();
 init();

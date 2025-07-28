@@ -30,13 +30,18 @@
                     <div class="stats-group">
                         <div class="stat-item">
                             <span class="stat-label">per click</span>
-                            <span id="coinsPerClick" class="stat-value">1</span>
+                            <span id="coinsPerClick" class="stat-value">0</span>
                         </div>
 
                         <div class="stat-item">
                             <span class="stat-label">per second</span>
                             <span id="coinsPerSec" class="stat-value">0</span>
                         </div>
+                    </div>
+
+                    <div class="stat-item">
+                        <span class="stat-label">offline / hr</span>
+                        <span id="offlineRate" class="stat-value">0</span>
                     </div>
 
                     <div class="clicker-zone">
@@ -183,6 +188,75 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="offlineUpgrades" class="upgrade-tab-content">
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_1">
+                        <div class="upgrade-icon">I</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 1</h3>
+                            <p>+0.00000005 / hour</p>
+                            <p>Level: <span id="offline_tier_1_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_1_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_2">
+                        <div class="upgrade-icon">V</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 5</h3>
+                            <p>+0.000001 / hour</p>
+                            <p>Level: <span id="offline_tier_2_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_2_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_3">
+                        <div class="upgrade-icon">X</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 10</h3>
+                            <p>+0.00005 / hour</p>
+                            <p>Level: <span id="offline_tier_3_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_3_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_4">
+                        <div class="upgrade-icon">L</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 50</h3>
+                            <p>+0.001 / hour</p>
+                            <p>Level: <span id="offline_tier_4_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_4_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_5">
+                        <div class="upgrade-icon">C C</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 100</h3>
+                            <p>+0.05 / hour</p>
+                            <p>Level: <span id="offline_tier_5_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_5_cost">0</span></span></button>
+                        </div>
+                    </div>
+                </div>
+                
             </section>
 
 
