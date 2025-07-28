@@ -5,6 +5,7 @@ const API_URL = 'https://clicker-backend-chjq.onrender.com';
 
 let userData = null;
 let isLoading = false;
+let isClicking = false;
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -64,19 +65,11 @@ Object.keys(navButtons).forEach(key => {
 
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
-    if (isLoading && method !== 'GET') {
-        return Promise.reject(new Error('Another request is already in progress.'));
-    }
-    isLoading = true;
-
     try {
         const headers = {
             'Content-Type': 'application/json',
             'Authorization': Telegram.WebApp.initData || ''
         };
-        console.log("Headers sent to API:", headers);
-        
-          
 
         const options = { method, headers };
         if (body) {
@@ -84,18 +77,17 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
         }
 
         const response = await fetch(`${API_URL}/api${endpoint}`, options);
-        const responseData = await response.json();
 
         if (!response.ok) {
+            const responseData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
             throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
         }
-        return responseData;
+
+        return await response.json();
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
         showNotification(error.message, 'error');
         throw error;
-    } finally {
-        isLoading = false;
     }
 }
 
@@ -115,14 +107,25 @@ function updateUI() {
     upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
 }
 
-clickImage.onclick = async (event) => {
-    tg.HapticFeedback.impactOccurred('light'); 
-    try {
-        const updatedUser = await apiRequest('/click', 'POST');
-        userData = updatedUser;
-        updateUI();
-        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
-    } catch (e) {  }
+clickImage.onclick = (event) => {
+    tg.HapticFeedback.impactOccurred('light');
+
+    if (userData) {
+        userData.coins += userData.coins_per_click;
+        updateUI(); 
+    }
+
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
+
+    apiRequest('/click', 'POST')
+        .then(updatedUserFromServer => {
+
+            userData = updatedUserFromServer;
+        })
+        .catch(error => {
+            console.error("Click could not be saved to server:", error);
+          
+        });
 };
 
 upgradeClickBtn.onclick = async () => {
