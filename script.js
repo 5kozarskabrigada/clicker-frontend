@@ -413,7 +413,7 @@ const coinsPerSecEl = document.getElementById('coinsPerSec');
 const clickImage = document.getElementById('clickImage');
 const upgradeClickBtn = document.getElementById('upgradeClickBtn');
 const upgradeAutoBtn = document.getElementById('upgradeAutoBtn');
-
+let isClicking = false; 
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
@@ -457,18 +457,33 @@ function updateUI() {
     upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
 }
 
-clickImage.onclick = async (event) => {
-    tg.HapticFeedback.impactOccurred('light');
-    try {
-        const updatedUser = await apiRequest('/click', 'POST');
-        userData = updatedUser;
-        updateUI();
-        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
-    } catch (error) {
-        console.error('Click failed:', error);
+clickImage.onclick = (event) => {
+    if (isClicking) {
+        return;
     }
-};
 
+    tg.HapticFeedback.impactOccurred('light');
+
+    userData.coins += userData.coins_per_click;
+    coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
+
+    isClicking = true;
+
+    apiRequest('/click', 'POST')
+        .then(updatedUser => {
+            userData = updatedUser;
+        })
+        .catch(error => {
+            console.error('Click sync failed:', error);
+            })
+
+        .finally(() => {
+            isClicking = false;
+        });
+  
+};
 
 upgradeClickBtn.onclick = async () => {
     try {
@@ -563,6 +578,61 @@ async function init() {
     }
 }
 
+const pages = {
+    main: document.getElementById('main'),
+    upgrade: document.getElementById('upgrade'),
+    top: document.getElementById('top'),
+    transfer: document.getElementById('transfer'),
+};
+
+const navButtons = {
+    main: document.getElementById('nav-main'),
+    upgrade: document.getElementById('nav-upgrade'),
+    top: document.getElementById('nav-top'),
+    transfer: document.getElementById('nav-transfer'),
+};
+
+
+function showPage(pageId) {
+
+    Object.values(pages).forEach(page => page.classList.remove('active'));
+    Object.values(navButtons).forEach(button => button.classList.remove('active'));
+
+
+    if (pages[pageId]) {
+        pages[pageId].classList.add('active');
+    }
+
+    if (navButtons[pageId]) {
+        navButtons[pageId].classList.add('active');
+    }
+
+    if (pageId === 'top') {
+
+    }
+}
+
+Object.keys(navButtons).forEach(key => {
+    if (navButtons[key]) {
+        navButtons[key].onclick = () => showPage(key);
+    }
+});
+
+
+async function loadTopPlayers() {
+    try {
+        const topListEl = document.getElementById('topList');
+        const players = await apiRequest('/top');
+        topListEl.innerHTML = '';
+        players.forEach((player, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="rank">${idx + 1}.</span> <span class="name">@${player.username || 'anonymous'}</span> <span class="coins">${player.coins.toLocaleString()} 🪙</span>`;
+            topListEl.appendChild(li);
+        });
+    } catch (e) {
+
+    }
+}
 
 tg.ready();
 init();
