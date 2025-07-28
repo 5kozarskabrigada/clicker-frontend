@@ -46,6 +46,7 @@ const upgrades = {
     'offline_tier_5': { base_cost: 1000000000, cost_mult: 1.20 },
 };
 
+
 const pages = {
     main: document.getElementById('main'),
     top: document.getElementById('top'),
@@ -113,6 +114,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
 }
 
+
 function openUpgradeTab(evt, tabName) {
     document.querySelectorAll('.upgrade-tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.upgrade-tab-link').forEach(link => link.classList.remove('active'));
@@ -143,27 +145,25 @@ function calculateCost(base, multiplier, level) {
 
 function updateUI() {
     if (!userData) return;
-
     coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
-    offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
+    if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
-
         const levelEl = document.getElementById(`${id}_level`);
-        if (levelEl) levelEl.textContent = level;
-
         const costEl = document.getElementById(`${id}_cost`);
-        if (costEl) costEl.textContent = cost.toLocaleString();
-
         const button = document.querySelector(`#upgrade_${id} .action-button`);
-        if (button) {
-            button.disabled = userData.coins < cost;
-        }
+        if (levelEl) levelEl.textContent = level;
+        if (costEl) costEl.textContent = cost.toLocaleString();
+        if (button) button.disabled = userData.coins < cost;
     }
+}
+
+function calculateCost(base, multiplier, level) {
+    return Math.floor(base * Math.pow(multiplier, level));
 }
 
 
@@ -189,24 +189,19 @@ async function purchaseUpgrade(upgradeId) {
 }
 
 clickImage.onclick = (event) => {
+    if (!userData) return;
+
     tg.HapticFeedback.impactOccurred('light');
 
-    if (userData) {
-        userData.coins += userData.coins_per_click;
-        updateUI(); 
-    }
+    userData.coins += userData.coins_per_click;
 
-    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click}`);
+    coinsEl.textContent = parseFloat(userData.coins)
+    .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
 
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
     apiRequest('/click', 'POST')
-        .then(updatedUserFromServer => {
-
-            userData = updatedUserFromServer;
-        })
-        .catch(error => {
-            console.error("Click could not be saved to server:", error);
-          
-        });
+    .then(user => { userData = user; })
+    .catch(err => console.error(err));
 };
 
 // upgradeClickBtn.onclick = async () => {
@@ -266,6 +261,16 @@ async function loadTopPlayers() {
         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
     }
 }
+
+function startPassiveIncome() {
+    setInterval(() => {
+        if (userData && userData.coins_per_sec > 0) {
+            userData.coins += userData.coins_per_sec;
+            coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+        }
+    }, 1000);
+}
+
 
 async function loadImages() {
     try {
@@ -482,9 +487,10 @@ function showFloatingCoin(x, y, amount) {
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
+    if (!loadingOverlay) { console.error("Loading overlay not found!"); return; }
 
     try {
-        const bonusData = await apiRequest('/api/claim-bonus', 'POST');
+        const bonusData = await apiRequest('/claim-bonus', 'POST');
         if (bonusData && bonusData.earned_coins > 0) {
             showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(8)} coins.`, 'success');
         }
@@ -496,11 +502,13 @@ async function init() {
         updateUI();
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
+
     } catch (e) {
-        loadingText.innerHTML = `Connection Error<br/><small>Please open this app inside Telegram.</small>`;
+        loadingText.innerHTML = `Connection Error<br/><small>Please restart the app inside Telegram.</small>`;
         console.error("Initialization failed:", e);
     }
 }
+
 
 
 tg.ready();
