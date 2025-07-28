@@ -260,58 +260,67 @@
             </section>
 
 
-                <section id="top" class="page">
-                    <h1 class="page-title">Top Players</h1>
-                    <ol id="topList" class="leaderboard-list"></ol>
-                </section>
+            <section id="top" class="page">
+                <h1 class="page-title">🏆 Top Players</h1>
 
 
-                <section id="transfer" class="page">
+                <div class="top-nav">
+                    <button class="top-tab-link active" onclick="openTopTab(event, 'coins')">Total Coins</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_click')">Per Click</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_sec')">Per Second</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'offline_coins_per_hour')">Offline</button>
+                </div>
 
-                    <h1 class="page-title">Transfer Coins</h1>
+                <ol id="topList" class="leaderboard-list"></ol>
+            </section>
 
-                    <div class="transfer-form">
-                        <div class="input-group">
-                            <label for="transferUsername">Recipient's Username</label>
-                            <input id="transferUsername" type="text" placeholder="@username" />
-                        </div>
 
-                        <div class="input-group">
-                            <label for="transferAmount">Amount to Send</label>
-                            <input id="transferAmount" type="number" placeholder="1000" min="1" />
-                        </div>
+            <section id="transfer" class="page">
 
-                        <button id="transferBtn" class="action-button">Send Coins</button>
-                        <p id="transferMessage" class="transfer-message"></p>
+                <h1 class="page-title">Transfer Coins</h1>
+
+                <div class="transfer-form">
+                    <div class="input-group">
+                        <label for="transferUsername">Recipient's Username</label>
+                        <input id="transferUsername" type="text" placeholder="@username" />
                     </div>
-                </section>
-            </div>
+
+                    <div class="input-group">
+                        <label for="transferAmount">Amount to Send</label>
+                        <input id="transferAmount" type="number" placeholder="1000" min="1" />
+                    </div>
+
+                    <button id="transferBtn" class="action-button">Send Coins</button>
+                    <p id="transferMessage" class="transfer-message"></p>
+                </div>
+            </section>
         </div>
+    </div>
 
 
-        <nav class="bottom-nav">
-            
-            <button id="nav-main" class="nav-btn active">
-                <span class="nav-icon">🖱️</span>
-                <span class="nav-text">Click</span>
-            </button>
-            <button id="nav-upgrade" class="nav-btn">
-                <span class="nav-icon">⚡️</span>
-                <span class="nav-text">Upgrades</span>
-            </button>
-            <button id="nav-top" class="nav-btn">
-                <span class="nav-icon">🏆</span>
-                <span class="nav-text">Top</span>
-            </button>
-            <button id="nav-transfer" class="nav-btn">
-                <span class="nav-icon">💸</span>
-                <span class="nav-text">Transfer</span>
-            </button>
-        </nav>
-
-        <div id="notificationContainer"></div>
-        </div>
-        <script src="script.js"></script>
-        </body>
+    <nav class="bottom-nav">
         
-        </html>
+        <button id="nav-main" class="nav-btn active">
+            <span class="nav-icon">🖱️</span>
+            <span class="nav-text">Click</span>
+        </button>
+        <button id="nav-upgrade" class="nav-btn">
+            <span class="nav-icon">⚡️</span>
+            <span class="nav-text">Upgrades</span>
+        </button>
+        <button id="nav-top" class="nav-btn">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-text">Top</span>
+        </button>
+        <button id="nav-transfer" class="nav-btn">
+            <span class="nav-icon">💸</span>
+            <span class="nav-text">Transfer</span>
+        </button>
+    </nav>
+
+    <div id="notificationContainer"></div>
+    </div>
+    <script src="script.js"></script>
+    </body>
+    
+    </html>

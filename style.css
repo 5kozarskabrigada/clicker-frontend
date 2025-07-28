@@ -333,6 +333,124 @@ body {
     filter: brightness(1.1);
 }
 
+
+.top-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.top-tab-link {
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.top-tab-link.active {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+}
+
+.leaderboard-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.leaderboard-list li {
+    background: var(--bg-surface);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.leaderboard-list .rank {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    width: 25px;
+    text-align: center;
+}
+
+.leaderboard-list .name {
+    flex-grow: 1;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.leaderboard-list .value {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 14px;
+    word-break: break-all;
+}
+
+
+.transfer-form {
+    background: var(--bg-surface);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 16px;
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-accent);
+    box-shadow: 0 0 0 3px var(--primary-accent-glow);
+}
+
+.transfer-message {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.transfer-message.success {
+    color: var(--success);
+}
+
+.transfer-message.error {
+    color: var(--error);
+}
+
 #notificationContainer {
     position: fixed;
     top: 20px;

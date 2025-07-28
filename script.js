@@ -162,6 +162,17 @@ function updateUI() {
         if (costEl) costEl.textContent = cost.toLocaleString();
         if (button) button.disabled = userData.coins < cost;
     }
+
+    clickImage.onclick = (event) => {
+        if (!userData) return;
+        tg.HapticFeedback.impactOccurred('light');
+        userData.coins += userData.coins_per_click;
+
+        coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
+        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+        apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
+    };
 }
 
 function calculateCost(base, multiplier, level) {
@@ -250,16 +261,35 @@ transferBtn.onclick = async () => {
     }
 };
 
-async function loadTopPlayers() {
+function openTopTab(evt, sortBy) {
+    document.querySelectorAll('.top-tab-link').forEach(link => link.classList.remove('active'));
+    evt.currentTarget.classList.add('active');
+    loadTopPlayers(sortBy);
+}
+
+async function loadTopPlayers(sortBy = 'coins') {
     try {
-        const players = await apiRequest('/top');
+        const players = await apiRequest(`/top?sortBy=${sortBy}`);
+        topListEl.innerHTML = '<li>Loading...</li>';
+
+        const formatValue = (value) => {
+            return sortBy === 'coins' ? parseFloat(value).toLocaleString() + ' 🪙' : parseFloat(value).toFixed(10);
+        };
+
         topListEl.innerHTML = ''; 
+
         players.forEach((player, idx) => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="rank">${idx + 1}.</span> <span class="name">@${player.username || 'anonymous'}</span> <span class="coins">${player.coins.toLocaleString()} 🪙</span>`;
+            li.innerHTML = `
+                <span class="rank">${idx + 1}.</span>
+                <span class="name">@${player.username || 'anonymous'}</span>
+                <span class="value">${formatValue(player[sortBy])}</span>
+            `;
             topListEl.appendChild(li);
         });
-    } catch (e) {
+    } 
+    
+    catch (e) {
         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
     }
 }
