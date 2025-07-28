@@ -186,7 +186,7 @@ body {
     }
 }
 
-/* --- GENERIC STYLES FOR OTHER PAGES --- */
+
 .page-title {
     font-size: 28px;
     font-weight: 800;
@@ -194,35 +194,172 @@ body {
     margin-bottom: 30px;
 }
 
-.upgrade-section,
-.transfer-form {
-    background: var(--bg-surface);
-    padding: 20px;
-    border-radius: var(--border-radius);
-    margin-bottom: 20px;
-    border: 1px solid var(--border-color);
-}
 
-.upgrade-section h3 {
-    font-size: 18px;
-    margin: 0 0 15px;
-}
-
-.upgrade-info {
+.upgrade-nav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.upgrade-tab-link {
+    padding: 10px 20px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
     color: var(--text-secondary);
-}
-
-.upgrade-cost span,
-.upgrade-level span {
-    color: var(--text-primary);
+    border-radius: 12px;
     font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* --- LEADERBOARD --- */
+.upgrade-tab-link.active {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+}
+
+.upgrade-tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.upgrade-tab-content.active {
+    display: flex; 
+
+}
+
+.upgrade-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.upgrade-icon {
+    font-size: 32px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface-light);
+    border-radius: 12px;
+}
+
+.upgrade-details {
+    flex-grow: 1;
+}
+
+.upgrade-details h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.upgrade-details p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 500;
+}
+
+.upgrade-action .action-button {
+    min-width: 120px; 
+}
+
+.upgrade-action .cost {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+
+.upgrade-nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.upgrade-tab-link {
+    padding: 10px 20px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upgrade-tab-link.active {
+    background: var(--primary-accent);
+    color: white;
+    border-color: var(--primary-accent);
+}
+
+.upgrade-tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.upgrade-tab-content.active {
+    display: flex;
+}
+
+.upgrade-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+}
+
+.upgrade-icon {
+    font-size: 32px;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface-light);
+    border-radius: 12px;
+}
+
+.upgrade-details {
+    flex-grow: 1;
+}
+
+.upgrade-details h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.upgrade-details p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+    font-weight: 500;
+}
+
+.upgrade-action .action-button {
+    min-width: 120px;
+}
+
+.upgrade-action .cost {
+    font-weight: 700;
+    font-size: 15px;
+}
+
+
 .leaderboard-list {
     list-style: none;
     display: flex;
@@ -257,7 +394,7 @@ body {
     color: var(--gold);
 }
 
-/* --- FORMS & BUTTONS (IMPROVED) --- */
+
 .input-group {
     margin-bottom: 20px;
 }
@@ -331,7 +468,7 @@ input[type="number"]:focus {
     color: var(--error);
 }
 
-/* --- BOTTOM NAVIGATION --- */
+
 .bottom-nav {
     position: absolute;
     bottom: 0;
@@ -375,7 +512,7 @@ input[type="number"]:focus {
     transform: scale(0.9);
 }
 
-/* --- Notifications --- */
+
 #notificationContainer {
     position: fixed;
     top: 20px;

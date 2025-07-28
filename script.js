@@ -27,17 +27,16 @@ const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
 const upgrades = {
-    'click_1': { base_cost: 10, cost_mult: 1.15 },
-    'click_2': { base_cost: 500, cost_mult: 1.15 },
-    'click_3': { base_cost: 10000, cost_mult: 1.15 },
-    'click_4': { base_cost: 250000, cost_mult: 1.15 },
-    'click_5': { base_cost: 5000000, cost_mult: 1.15 },
-
-    'auto_1': { base_cost: 100, cost_mult: 1.15 },
-    'auto_2': { base_cost: 2500, cost_mult: 1.15 },
-    'auto_3': { base_cost: 50000, cost_mult: 1.15 },
-    'auto_4': { base_cost: 1000000, cost_mult: 1.15 },
-    'auto_5': { base_cost: 20000000, cost_mult: 1.15 },
+    'click_tier_1': { base_cost: 10, cost_mult: 1.15 },
+    'click_tier_2': { base_cost: 500, cost_mult: 1.15 },
+    'click_tier_3': { base_cost: 10000, cost_mult: 1.15 },
+    'click_tier_4': { base_cost: 250000, cost_mult: 1.15 },
+    'click_tier_5': { base_cost: 5000000, cost_mult: 1.15 },
+    'auto_tier_1': { base_cost: 100, cost_mult: 1.15 },
+    'auto_tier_2': { base_cost: 2500, cost_mult: 1.15 },
+    'auto_tier_3': { base_cost: 50000, cost_mult: 1.15 },
+    'auto_tier_4': { base_cost: 1000000, cost_mult: 1.15 },
+    'auto_tier_5': { base_cost: 20000000, cost_mult: 1.15 },
 };
 
 const pages = {
@@ -132,43 +131,46 @@ function calculateCost(base, multiplier, level) {
     return Math.floor(base * Math.pow(multiplier, level));
 }
 
-// Update your UI update function
+
 function updateUI() {
     if (!userData) return;
 
-    // Use toFixed to show small decimal values
-    coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+    coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
 
-    // Update costs and levels for each upgrade tier
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
 
         document.getElementById(`${id}_level`).textContent = level;
         document.getElementById(`${id}_cost`).textContent = cost.toLocaleString();
-        document.getElementById(`upgrade_${id}`).disabled = userData.coins < cost;
+
+        const button = document.querySelector(`#upgrade_${id} .action-button`);
+        if (button) {
+            button.disabled = userData.coins < cost;
+        }
     }
 }
 
 
 document.addEventListener('DOMContentLoaded', () => {
     for (const id in upgrades) {
-        document.getElementById(`upgrade_${id}`).onclick = () => purchaseUpgrade(id);
+        const button = document.querySelector(`#upgrade_${id} .action-button`);
+        if (button) {
+            button.onclick = () => purchaseUpgrade(id);
+        }
     }
 });
 
 async function purchaseUpgrade(upgradeId) {
-
     tg.HapticFeedback.notificationOccurred('success');
     try {
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
         updateUI();
         showNotification('Upgrade successful!', 'success');
-    } 
-    catch (e) {
+    } catch (e) {
         showNotification(e.message, 'error');
     }
 }

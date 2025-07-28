@@ -57,148 +57,124 @@
             
                 <div id="clickUpgrades" class="upgrade-tab-content active">
             
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">Ⅰ</div>
-                        <div class="upgrade-details">
-                            <h3>lvl 1</h3>
-                            <p>+0.0000000001 per click</p>
-                            <p>Level: <span id="click_1_level">0</span></p>
-                        </div>
-                        <div class="upgrade-action">
-                            <button id="upgrade_click_1" class="action-button">
-                                <span class="cost">Cost: <span id="click_1_cost">0</span></span>
-                            </button>
-                        </div>
+                <div class="upgrade-item" id="upgrade_click_tier_1">
+                    <div class="upgrade-icon">I</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 1</h3>
+                        <p>+0.0000000001 per click</p>
+                        <p>Level: <span id="click_tier_1_level">0</span></p>
                     </div>
-            
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">V</div>
-                        <div class="upgrade-details">
-                            <h3>lvl 5</h3>
-                            <p>+0.00000001 per click</p>
-                            <p>Level: <span id="click_2_level">0</span></p>
-                        </div>
-                        <div class="upgrade-action">
-                            <button id="upgrade_click_2" class="action-button">
-                                <span class="cost">Cost: <span id="click_2_cost">0</span></span>
-                            </button>
-                        </div>
-                    </div>
-            
-
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">X</div>
-                        <div class="upgrade-details">
-                            <h3>lvl 10</h3>
-                            <p>+0.000001 per click</p>
-                            <p>Level: <span id="click_3_level">0</span></p>
-                        </div>
-                        <div class="upgrade-action">
-                            <button id="upgrade_click_3" class="action-button">
-                                <span class="cost">Cost: <span id="click_3_cost">0</span></span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">L</div>
-                        <div class="upgrade-details">
-                            <h3>lvl 50</h3>
-                            <p>+0.0001 per click</p>
-                            <p>Level: <span id="click_4_level">0</span></p>
-                        </div>
-                        <div class="upgrade-action">
-                            <button id="upgrade_click_4" class="action-button">
-                                <span class="cost">Cost: <span id="click_4_cost">0</span></span>
-                            </button>
-                        </div>
-                    </div>
-            
-                    <!-- Tier 5 -->
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">C C</div>
-                        <div class="upgrade-details">
-                            <h3>lvl 100</h3>
-                            <p>+0.01 per click</p>
-                            <p>Level: <span id="click_5_level">0</span></p>
-                        </div>
-                        <div class="upgrade-action">
-                            <button id="upgrade_click_5" class="action-button">
-                                <span class="cost">Cost: <span id="click_5_cost">0</span></span>
-                            </button>
-                        </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_1_cost">0</span></span></button>
                     </div>
                 </div>
-            
-                <div id="autoUpgrades" class="upgrade-tab-content">
-            
+                
+                <div class="upgrade-item" id="upgrade_click_tier_2">
+                    <div class="upgrade-icon">V</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 5</h3>
+                        <p>+0.00000001 per click</p>
+                        <p>Level: <span id="click_tier_2_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_2_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_3">
+                    <div class="upgrade-icon">X</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 10</h3>
+                        <p>+0.000001 per click</p>
+                        <p>Level: <span id="click_tier_3_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_3_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_4">
+                    <div class="upgrade-icon">L</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 50</h3>
+                        <p>+0.0001 per click</p>
+                        <p>Level: <span id="click_tier_4_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_4_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_5">
+                    <div class="upgrade-icon">C</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 100</h3>
+                        <p>+0.01 per click</p>
+                        <p>Level: <span id="click_tier_5_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_5_cost">0</span></span></button>
+                    </div>
+                </div>
+                </div>
+                
 
-                    <div class="upgrade-item">
+                <div id="autoUpgrades" class="upgrade-tab-content">
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_1">
                         <div class="upgrade-icon">I</div>
                         <div class="upgrade-details">
                             <h3>lvl 1</h3>
                             <p>+0.0000000005 per second</p>
-                            <p>Level: <span id="auto_1_level">0</span></p>
+                            <p>Level: <span id="auto_tier_1_level">0</span></p>
                         </div>
                         <div class="upgrade-action">
-                            <button id="upgrade_auto_1" class="action-button">
-                                <span class="cost">Cost: <span id="auto_1_cost">0</span></span>
-                            </button>
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_1_cost">0</span></span></button>
                         </div>
                     </div>
-            
-
-                    <div class="upgrade-item">
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_2">
                         <div class="upgrade-icon">V</div>
                         <div class="upgrade-details">
                             <h3>lvl 5</h3>
                             <p>+0.00000005 per second</p>
-                            <p>Level: <span id="auto_2_level">0</span></p>
+                            <p>Level: <span id="auto_tier_2_level">0</span></p>
                         </div>
                         <div class="upgrade-action">
-                            <button id="upgrade_auto_2" class="action-button">
-                                <span class="cost">Cost: <span id="auto_2_cost">0</span></span>
-                            </button>
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_2_cost">0</span></span></button>
                         </div>
                     </div>
-            
-
-                    <div class="upgrade-item">
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_3">
                         <div class="upgrade-icon">X</div>
                         <div class="upgrade-details">
-                            <h3>lvl 100</h3>
+                            <h3>lvl 10</h3>
                             <p>+0.000005 per second</p>
-                            <p>Level: <span id="auto_3_level">0</span></p>
+                            <p>Level: <span id="auto_tier_3_level">0</span></p>
                         </div>
                         <div class="upgrade-action">
-                            <button id="upgrade_auto_3" class="action-button">
-                                <span class="cost">Cost: <span id="auto_3_cost">0</span></span>
-                            </button>
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_3_cost">0</span></span></button>
                         </div>
                     </div>
-            
-
-                    <div class="upgrade-item">
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_4">
                         <div class="upgrade-icon">L</div>
                         <div class="upgrade-details">
                             <h3>lvl 50</h3>
                             <p>+0.0005 per second</p>
-                            <p>Level: <span id="auto_4_level">0</span></p>
+                            <p>Level: <span id="auto_tier_4_level">0</span></p>
                         </div>
                         <div class="upgrade-action">
-                            <button id="upgrade_auto_4" class="action-button">
-                                <span class="cost">Cost: <span id="auto_4_cost">0</span></span>
-                            </button>
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_4_cost">0</span></span></button>
                         </div>
                     </div>
-            
-
-                    <div class="upgrade-item">
-                        <div class="upgrade-icon">C C</div>
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_5">
+                        <div class="upgrade-icon">C</div>
                         <div class="upgrade-details">
                             <h3>lvl 100</h3>
                             <p>+0.05 per second</p>
-                            <p>Level: <span id="auto_5_level">0</span></p>
+                            <p>Level: <span id="auto_tier_5_level">0</span></p>
                         </div>
                         <div class="upgrade-action">
                             <button id="upgrade_auto_5" class="action-button">
