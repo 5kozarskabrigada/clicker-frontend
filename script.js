@@ -88,6 +88,12 @@ Object.keys(navButtons).forEach(key => {
     if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    for (const id in upgrades) {
+        const button = document.querySelector(`#upgrade_${id} .action-button`);
+        if (button) button.onclick = () => purchaseUpgrade(id);
+    }
+});
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
@@ -180,11 +186,11 @@ function calculateCost(base, multiplier, level) {
 
 function updateUI() {
     if (!userData) return;
-
-    coinsEl.textContent = parseFloat(userData.coins).toFixed(16);
-    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(16);
-    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(16);
-    if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
+    const D_PRECISION = 16;
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(D_PRECISION);
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(D_PRECISION);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(D_PRECISION);
+    if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(12) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
@@ -197,13 +203,9 @@ function updateUI() {
         if (button) button.disabled = userData.coins < cost;
     }
 }
-function calculateCost(base, multiplier, level) {
-    return Math.floor(base * Math.pow(multiplier, level));
-}
 
 
 async function purchaseUpgrade(upgradeId) {
-    tg.HapticFeedback.notificationOccurred('success');
     try {
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
@@ -214,51 +216,45 @@ async function purchaseUpgrade(upgradeId) {
     }
 }
 
-
 clickImage.onclick = (event) => {
     if (!userData) return;
-
     tg.HapticFeedback.impactOccurred('light');
 
     userData.coins += userData.coins_per_click;
     updateUI();
     showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(16)}`);
-    pendingClicks++;
 
+    pendingClicks++;
     syncClicksToServer();
 };
 
 async function syncClicksToServer() {
-    if (isSyncing || pendingClicks === 0) {
-        return;
-    }
+    if (isSyncing || pendingClicks === 0) return;
 
     isSyncing = true;
-
     const clicksToSync = pendingClicks;
 
     try {
+        let lastResponse = null;
         for (let i = 0; i < clicksToSync; i++) {
-            await apiRequest('/click', 'POST');
+            lastResponse = await apiRequest('/click', 'POST');
         }
 
+        if (lastResponse) {
+            userData = lastResponse;
+        }
         pendingClicks -= clicksToSync;
 
-    } 
-    
-    catch (err) {
+    } catch (err) {
         console.error("Failed to sync clicks with server:", err);
-    } 
-    
-    finally {
+    } finally {
         isSyncing = false;
-
         if (pendingClicks > 0) {
-            syncClicksToServer();
-        } 
-        else {
+            setTimeout(syncClicksToServer, 100); 
+        } else {
+
             const latestUserData = await apiRequest('/user');
-            userData = latestUserData;
+            userData = latestUserData.user;
             updateUI();
         }
     }
@@ -616,29 +612,40 @@ function showFloatingCoin(x, y, amount) {
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
-    if (!loadingOverlay) { console.error("FATAL: Loading overlay not found!"); return; }
 
     try {
-        await apiRequest('/claim-bonus', 'POST');
-        const initialUserData = await apiRequest('/user');
-        if (!initialUserData) throw new Error("Received empty user data from server.");
+        const response = await apiRequest('/user');
+        if (!response || !response.user) throw new Error("Invalid user data from server.");
 
-        userData = initialUserData;
+        userData = response.user;
+        const earnings = response.earnings;
+
+        if (earnings) {
+            const totalEarned = (earnings.earned_passive || 0) + (earnings.earned_offline_bonus || 0);
+            if (totalEarned > 0) {
+                showNotification(`Welcome back! You earned ${totalEarned.toFixed(16)} coins.`, 'success');
+            }
+        }
+
         updateUI();
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
+
     } catch (e) {
         loadingText.innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
         console.error("Initialization failed:", e);
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    for (const id in upgrades) {
-        const button = document.querySelector(`#upgrade_${id} .action-button`);
-        if (button) button.onclick = () => purchaseUpgrade(id);
-    }
-});
+// --- CORE GAME LOOP & SYNC ---
+function startPassiveIncome() {
+    setInterval(() => {
+        if (userData && userData.coins_per_sec > 0) {
+            userData.coins += userData.coins_per_sec;
+            updateUI();
+        }
+    }, 1000);
+}
 
 tg.ready();
 init();
