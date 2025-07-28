@@ -181,9 +181,9 @@ function calculateCost(base, multiplier, level) {
 function updateUI() {
     if (!userData) return;
 
-    coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
-    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
-    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(16);
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(16);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(16);
     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';
 
     for (const id in upgrades) {
@@ -222,7 +222,7 @@ clickImage.onclick = (event) => {
 
     userData.coins += userData.coins_per_click;
     updateUI();
-    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(16)}`);
     pendingClicks++;
 
     syncClicksToServer();
@@ -303,7 +303,7 @@ async function syncClicksToServer() {
 
 transferBtn.onclick = async () => {
     const toUsername = transferUsernameEl.value.trim().replace(/^@/, '');
-    const amount = parseInt(transferAmountEl.value, 10);
+    const amount = parseInt(transferAmountEl.value, 16);
 
     if (!toUsername || !amount || amount <= 0) {
         transferMessageEl.textContent = 'Please enter a valid username and amount.';
@@ -338,7 +338,7 @@ async function loadTopPlayers(sortBy = 'coins') {
         const players = await apiRequest(`/top?sortBy=${sortBy}`);
 
         const formatValue = (value) => {
-            return parseFloat(value).toFixed(10);
+            return parseFloat(value).toFixed(16);
         };
 
         topListEl.innerHTML = '';
