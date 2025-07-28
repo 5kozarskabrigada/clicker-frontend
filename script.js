@@ -145,7 +145,9 @@ function calculateCost(base, multiplier, level) {
 
 function updateUI() {
     if (!userData) return;
-    coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(8) + ' / hr';

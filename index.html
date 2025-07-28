@@ -13,16 +13,12 @@
 </head>
 
 <body>
-
-    <!-- THIS IS THE CRITICAL FIX -->
     <div id="loading-overlay" class="active">
         <div id="loading-text">Loading...</div>
     </div>
-
     <div id="app">
         <div class="app-content">
             <div id="page-container">
-                <!-- Main Page -->
                 <section id="main" class="page active">
                     <div class="main-header">
                         <h2>Coin Clicker</h2>
@@ -31,7 +27,8 @@
                         <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
                         <span id="coins" class="total-coins-value">0</span>
                     </div>
-                    <div class="stats-group">
+
+                    <div class="stats-grid">
                         <div class="stat-item">
                             <span class="stat-label">per click</span>
                             <span id="coinsPerClick" class="stat-value">0</span>
@@ -40,25 +37,28 @@
                             <span class="stat-label">per second</span>
                             <span id="coinsPerSec" class="stat-value">0</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">offline / hr</span>
+                        <div class="stat-item full-width">
+                            <span class="stat-label">offline bonus / hr</span>
                             <span id="offlineRate" class="stat-value">0</span>
                         </div>
                     </div>
+
                     <div class="clicker-zone">
                         <div id="clickImage" class="click-image"></div>
                         <div id="floating-text-container"></div>
                     </div>
                 </section>
 
-
-            <section id="upgrade" class="page">
-                <h1 class="page-title">Upgrades</h1>
-
-                <div class="upgrade-nav">
-                    <button class="upgrade-tab-link active" onclick="openUpgradeTab(event, 'clickUpgrades')">Per Click</button>
-                    <button class="upgrade-tab-link" onclick="openUpgradeTab(event, 'autoUpgrades')">Per Second</button>
-                </div>
+                <section id="upgrade" class="page">
+                    <h1 class="page-title">⚙️ Upgrades</h1>
+                    <div class="upgrade-nav">
+                        <button class="upgrade-tab-link active" onclick="openUpgradeTab(event, 'clickUpgrades')">Per
+                            Click</button>
+                        <button class="upgrade-tab-link" onclick="openUpgradeTab(event, 'autoUpgrades')">Per
+                            Second</button>
+                        <button class="upgrade-tab-link"
+                            onclick="openUpgradeTab(event, 'offlineUpgrades')">Offline</button>
+                    </div>
             
                 <div id="clickUpgrades" class="upgrade-tab-content active">
             
@@ -183,7 +183,7 @@
                         </div>
                         <div class="upgrade-action">
                             <button id="upgrade_auto_5" class="action-button">
-                                <span class="cost">Cost: <span id="auto_5_cost">0</span></span>
+                                <span class="cost">Cost: <span id="auto_tier_5_cost">0</span></span>
                             </button>
                         </div>
                     </div>
@@ -310,8 +310,8 @@
         </nav>
 
         <div id="notificationContainer"></div>
-    </div>
-    <script src="script.js"></script>
-</body>
-
-</html>
+        </div>
+        <script src="script.js"></script>
+        </body>
+        
+        </html>
