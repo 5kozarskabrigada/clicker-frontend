@@ -13,42 +13,42 @@
 </head>
 
 <body>
+
+    <!-- THIS IS THE CRITICAL FIX -->
+    <div id="loading-overlay" class="active">
+        <div id="loading-text">Loading...</div>
+    </div>
+
     <div id="app">
         <div class="app-content">
             <div id="page-container">
-
+                <!-- Main Page -->
                 <section id="main" class="page active">
                     <div class="main-header">
                         <h2>Coin Clicker</h2>
                     </div>
-
                     <div class="total-coins-container">
                         <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
                         <span id="coins" class="total-coins-value">0</span>
                     </div>
-
                     <div class="stats-group">
                         <div class="stat-item">
                             <span class="stat-label">per click</span>
                             <span id="coinsPerClick" class="stat-value">0</span>
                         </div>
-
                         <div class="stat-item">
                             <span class="stat-label">per second</span>
                             <span id="coinsPerSec" class="stat-value">0</span>
                         </div>
+                        <div class="stat-item">
+                            <span class="stat-label">offline / hr</span>
+                            <span id="offlineRate" class="stat-value">0</span>
+                        </div>
                     </div>
-
-                    <div class="stat-item">
-                        <span class="stat-label">offline / hr</span>
-                        <span id="offlineRate" class="stat-value">0</span>
-                    </div>
-
                     <div class="clicker-zone">
                         <div id="clickImage" class="click-image"></div>
                         <div id="floating-text-container"></div>
                     </div>
-
                 </section>
 
 
