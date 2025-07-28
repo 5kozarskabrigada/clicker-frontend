@@ -26,6 +26,20 @@ const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
+const upgrades = {
+    'click_1': { base_cost: 10, cost_mult: 1.15 },
+    'click_2': { base_cost: 500, cost_mult: 1.15 },
+    'click_3': { base_cost: 10000, cost_mult: 1.15 },
+    'click_4': { base_cost: 250000, cost_mult: 1.15 },
+    'click_5': { base_cost: 5000000, cost_mult: 1.15 },
+
+    'auto_1': { base_cost: 100, cost_mult: 1.15 },
+    'auto_2': { base_cost: 2500, cost_mult: 1.15 },
+    'auto_3': { base_cost: 50000, cost_mult: 1.15 },
+    'auto_4': { base_cost: 1000000, cost_mult: 1.15 },
+    'auto_5': { base_cost: 20000000, cost_mult: 1.15 },
+};
+
 const pages = {
     main: document.getElementById('main'),
     top: document.getElementById('top'),
@@ -91,20 +105,72 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
 }
 
+function openUpgradeTab(evt, tabName) {
+    document.querySelectorAll('.upgrade-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.upgrade-tab-link').forEach(link => link.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+}
 
+
+// function updateUI() {
+//     if (!userData) return;
+//     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+//     coinsPerSecEl.textContent = userData.coins_per_sec.toLocaleString();
+//     coinsPerClickEl.textContent = userData.coins_per_click.toLocaleString();
+//     upgradeClickLevelEl.textContent = userData.click_upgrade_level;
+//     upgradeClickCostEl.textContent = userData.click_upgrade_cost.toLocaleString();
+//     upgradeAutoLevelEl.textContent = userData.auto_upgrade_level;
+//     upgradeAutoCostEl.textContent = userData.auto_upgrade_cost.toLocaleString();
+//     clickImage.className = `click-image ${userData.current_image || 'default'}`;
+
+//     upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
+//     upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
+// }
+
+function calculateCost(base, multiplier, level) {
+    return Math.floor(base * Math.pow(multiplier, level));
+}
+
+// Update your UI update function
 function updateUI() {
     if (!userData) return;
-    coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
-    coinsPerSecEl.textContent = userData.coins_per_sec.toLocaleString();
-    coinsPerClickEl.textContent = userData.coins_per_click.toLocaleString();
-    upgradeClickLevelEl.textContent = userData.click_upgrade_level;
-    upgradeClickCostEl.textContent = userData.click_upgrade_cost.toLocaleString();
-    upgradeAutoLevelEl.textContent = userData.auto_upgrade_level;
-    upgradeAutoCostEl.textContent = userData.auto_upgrade_cost.toLocaleString();
-    clickImage.className = `click-image ${userData.current_image || 'default'}`;
 
-    upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
-    upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
+    // Use toFixed to show small decimal values
+    coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+
+    // Update costs and levels for each upgrade tier
+    for (const id in upgrades) {
+        const level = userData[`${id}_level`] || 0;
+        const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+
+        document.getElementById(`${id}_level`).textContent = level;
+        document.getElementById(`${id}_cost`).textContent = cost.toLocaleString();
+        document.getElementById(`upgrade_${id}`).disabled = userData.coins < cost;
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    for (const id in upgrades) {
+        document.getElementById(`upgrade_${id}`).onclick = () => purchaseUpgrade(id);
+    }
+});
+
+async function purchaseUpgrade(upgradeId) {
+
+    tg.HapticFeedback.notificationOccurred('success');
+    try {
+        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
+        userData = updatedUser;
+        updateUI();
+        showNotification('Upgrade successful!', 'success');
+    } 
+    catch (e) {
+        showNotification(e.message, 'error');
+    }
 }
 
 clickImage.onclick = (event) => {
