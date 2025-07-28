@@ -170,7 +170,7 @@ function updateUI() {
 
         coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
 
-        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+        showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
         apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
     };
 }
@@ -209,7 +209,7 @@ clickImage.onclick = (event) => {
     userData.coins += userData.coins_per_click;
 
     coinsEl.textContent = parseFloat(userData.coins)
-    .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+    .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
 
     showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
     apiRequest('/click', 'POST')
@@ -298,7 +298,8 @@ function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
             userData.coins += userData.coins_per_sec;
-            coinsEl.textContent = parseFloat(userData.coins).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+            coinsEl.textContent = parseFloat(userData.coins)
+            .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
         }
     }, 1000);
 }
