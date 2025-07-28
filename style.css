@@ -119,7 +119,7 @@ body {
 }
 
 .total-coins-value {
-    font-size: 1.775rem;
+    font-size: 1.575rem;
     font-weight: 800;
     word-break: break-all;
 }
@@ -147,7 +147,7 @@ body {
 }
 
 .stat-value {
-    font-size: 0.875rem;
+    font-size: 1.075rem;
     font-weight: 700;
     color: var(--text-primary);
     display: block;
