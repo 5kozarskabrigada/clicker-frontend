@@ -1,7 +1,7 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const API_URL = 'https://clicker-backend-chjq.onrender.com';
+const API_URL = 'https://clicker-backend-chjq.onrender.com/api';
 
 let userData = null;
 let gameData = { images: [], tasks: [] };
@@ -63,7 +63,31 @@ const upgrades = {
 };
 
 
+async function apiRequest(endpoint, method = 'GET', body = null) {
+    try {
+        const options = {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': window.Telegram.WebApp.initData || ''
+            }
+        };
 
+        if (body) options.body = JSON.stringify(body);
+
+        const response = await fetch(`${API_URL}${endpoint}`, options);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API request failed:', error);
+        showNotification('Connection error. Please try again.', 'error');
+        throw error;
+    }
+}
 
 
 function startPassiveIncome() {
