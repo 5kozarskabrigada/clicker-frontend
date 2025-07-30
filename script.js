@@ -1,7 +1,7 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const API_URL = 'https://clicker-backend-chjq.onrender.com/api';
+const API_URL = 'https://clicker-backend-chjq.onrender.com';
 
 let userData = null;
 let gameData = { images: [], tasks: [] };
