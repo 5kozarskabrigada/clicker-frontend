@@ -66,7 +66,6 @@ const upgrades = {
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
     generateUpgradeHTML();
-
     try {
         const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
             apiRequest('/user'),
@@ -78,12 +77,11 @@ async function init() {
         if (!userDataResponse || !userDataResponse.user) throw new Error("Invalid user data from server.");
 
         userData = userDataResponse.user;
-        gameData = gameDataResponse;
+        const earnings = userDataResponse.earnings;
 
+        gameData = gameDataResponse;
         userProgress = userProgressResponse;
         userProgress.completed_task_ids = userTasksResponse.filter(t => t.is_completed).map(t => t.task_id);
-
-        const earnings = userDataResponse.earnings;
 
         if (earnings && earnings.earned_passive > 0) {
             showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins while away.`, 'success');
@@ -91,16 +89,12 @@ async function init() {
 
         updateUI();
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-
         if (equippedImage) {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
-
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
-    } 
-    
-    catch (e) {
+    } catch (e) {
         document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
     }
 }
