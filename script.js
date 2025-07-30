@@ -51,19 +51,20 @@ const upgrades = {
     ],
 
     auto: [
-        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000005', base_cost: 0.000000128, tier: 1 },
-        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000040', base_cost: 0.000002048, tier: 2 },
-        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000320', base_cost: 0.000032768, tier: 3 },
-        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000002560', base_cost: 0.000524288, tier: 4 },
-        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000020480', base_cost: 0.008388608, tier: 5 },
+
+        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ],
 
     offline: [
-        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.00000005/hr', base_cost: 0.000001, tier: 1 },
-        { id: 'offline_tier_2', name: 'Padded Bra', benefit: '+0.0000004/hr', base_cost: 0.000016, tier: 2 },
-        { id: 'offline_tier_3', name: 'Push-Up Bra', benefit: '+0.0000032/hr', base_cost: 0.000256, tier: 3 },
-        { id: 'offline_tier_4', name: 'Sports Bra', benefit: '+0.0000256/hr', base_cost: 0.004096, tier: 4 },
-        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.0002048/hr', base_cost: 0.065536, tier: 5 },
+        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'offline_tier_4', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ]
 };
 
@@ -95,7 +96,10 @@ function showPage(pageId) {
     Object.values(navButtons).forEach(b => b.classList.remove('active'));
 
     pages[pageId].classList.add('active');
-    navButtons[pageId].classList.add('active');
+
+    if (navButtons[pageId]) {
+        navButtons[pageId].classList.add('active');
+    }
 
   
     switch (pageId) {
@@ -259,10 +263,12 @@ clickImage.onclick = (event) => {
 
     userData.coins += userData.coins_per_click;
     updateUI();
-    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(16)}`);
+    showFloatingCoin(event.clientX, event.clientY, `+${formatCoins(userData.coins_per_click)}`);
 
-    pendingClicks++;
-    syncClicksToServer();
+    apiRequest('/click', 'POST')
+        .catch(err => {
+            console.error("Click sync failed:", err);
+        });
 };
 
 async function syncClicksToServer() {
@@ -666,7 +672,6 @@ function showFloatingCoin(x, y, amount) {
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
-
     generateUpgradeHTML();
 
     try {
@@ -688,6 +693,7 @@ async function init() {
         }
 
         updateUI();
+
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
         if (equippedImage) {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
@@ -700,6 +706,7 @@ async function init() {
         console.error("Initialization failed:", e);
     }
 }
+
 
 
 function openSubTab(evt, tabId) {
@@ -722,7 +729,51 @@ function startPassiveIncome() {
     }, 1000);
 }
 
+async function handleTransfer() {
+    const toUsername = document.getElementById('transferUsername').value.trim().replace(/^@/, '');
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const transferMessageEl = document.getElementById('transferMessage');
+
+    if (!toUsername || !amount || isNaN(amount) || amount <= 0) {
+        transferMessageEl.textContent = 'Please enter a valid username and amount.';
+        transferMessageEl.className = 'transfer-message error';
+        return;
+    }
+
+    try {
+        const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
+        userData = result.updatedSender;
+        updateUI();
+        transferMessageEl.textContent = result.message;
+        transferMessageEl.className = 'transfer-message success';
+
+        document.getElementById('transferUsername').value = '';
+        document.getElementById('transferAmount').value = '';
+
+    } catch (e) {
+        transferMessageEl.textContent = e.message;
+        transferMessageEl.className = 'transfer-message error';
+    }
+}
+
+function setupEventListeners() {
+
+    for (const key in navButtons) {
+        if (navButtons[key]) {
+            navButtons[key].onclick = () => showPage(key);
+        }
+    }
+
+    const gotoImagesBtn = document.getElementById('goto-images-btn');
+    if (gotoImagesBtn) {
+        gotoImagesBtn.onclick = () => showPage('images');
+    }
+
+    const transferBtn = document.getElementById('transferBtn');
+    if (transferBtn) transferBtn.onclick = handleTransfer; 
+}
+
 tg.ready();
+setupEventListeners();
 init();
 showPage('main');
-

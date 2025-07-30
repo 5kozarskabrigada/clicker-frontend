@@ -328,9 +328,33 @@ body {
     height: 4.375rem;
     background: #181818;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding-bottom: env(safe-area-inset-bottom);
     border-top: 1px solid var(--border-color);
+}
+
+.main-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.main-action-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.main-action-btn:hover {
+    border-color: var(--primary-accent);
+    color: var(--text-primary);
 }
 
 .nav-btn {
