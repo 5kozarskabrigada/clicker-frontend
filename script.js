@@ -31,17 +31,15 @@ const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
+const TIER_COST_MULTIPLIER = 16;
+const INTRA_TIER_COST_MULTIPLIER = 1.215;
 
 const clickBaseCost = 0.000000064;
 const autoBaseCost = 0.000000128; 
 const offlineBaseCost = 0.000001;
 
 
-const TIER_COST_MULTIPLIER = 16;
-const INTRA_TIER_COST_MULTIPLIER = 1.215;
-
 const upgrades = {
-
     click: [
         { id: 'click_tier_1', name: 'A Cups', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
         { id: 'click_tier_2', name: 'B Cups', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
@@ -49,22 +47,19 @@ const upgrades = {
         { id: 'click_tier_4', name: 'D Cups', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
         { id: 'click_tier_5', name: 'DD Cups', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ],
-
     auto: [
-
-        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
-        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
-        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
-        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
-        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
+        { id: 'auto_tier_1', name: 'Auto-Clicker v1', benefit: '+0.000000005', base_cost: 0.000000128, tier: 1 },
+        { id: 'auto_tier_2', name: 'Auto-Clicker v2', benefit: '+0.000000040', base_cost: 0.000002048, tier: 2 },
+        { id: 'auto_tier_3', name: 'Botnet Node', benefit: '+0.000000320', base_cost: 0.000032768, tier: 3 },
+        { id: 'auto_tier_4', name: 'AI Assistant', benefit: '+0.000002560', base_cost: 0.000524288, tier: 4 },
+        { id: 'auto_tier_5', name: 'Quantum CPU', benefit: '+0.000020480', base_cost: 0.008388608, tier: 5 },
     ],
-
     offline: [
-        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
-        { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
-        { id: 'offline_tier_3', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
-        { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
-        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
+        { id: 'offline_tier_1', name: 'Passive Earnings', benefit: '+0.00000005/hr', base_cost: 0.000001, tier: 1 },
+        { id: 'offline_tier_2', name: 'Power Saving Mode', benefit: '+0.0000004/hr', base_cost: 0.000016, tier: 2 },
+        { id: 'offline_tier_3', name: 'Cloud Sync', benefit: '+0.0000032/hr', base_cost: 0.000256, tier: 3 },
+        { id: 'offline_tier_4', name: 'Server Farm', benefit: '+0.0000256/hr', base_cost: 0.004096, tier: 4 },
+        { id: 'offline_tier_5', name: 'Global Network', benefit: '+0.0002048/hr', base_cost: 0.065536, tier: 5 },
     ]
 };
 
