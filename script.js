@@ -63,41 +63,7 @@ const upgrades = {
 };
 
 
-async function init() {
-    const loadingOverlay = document.getElementById('loading-overlay');
-    generateUpgradeHTML();
-    try {
-        const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
-            apiRequest('/user'),
-            apiRequest('/game-data'),
-            apiRequest('/user-progress'),
-            apiRequest('/user-tasks')
-        ]);
 
-        if (!userDataResponse || !userDataResponse.user) throw new Error("Invalid user data from server.");
-
-        userData = userDataResponse.user;
-        const earnings = userDataResponse.earnings;
-
-        gameData = gameDataResponse;
-        userProgress = userProgressResponse;
-        userProgress.completed_task_ids = userTasksResponse.filter(t => t.is_completed).map(t => t.task_id);
-
-        if (earnings && earnings.earned_passive > 0) {
-            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins while away.`, 'success');
-        }
-
-        updateUI();
-        const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-        if (equippedImage) {
-            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
-        }
-        loadingOverlay.classList.remove('active');
-        startPassiveIncome();
-    } catch (e) {
-        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
-    }
-}
 
 
 function startPassiveIncome() {
@@ -508,6 +474,42 @@ function openSubTab(evt, tabId) {
     parent.querySelector(`#${tabId}`).classList.add('active');
 
     evt.target.classList.add('active');
+}
+
+async function init() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    generateUpgradeHTML();
+    try {
+        const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
+            apiRequest('/user'),
+            apiRequest('/game-data'),
+            apiRequest('/user-progress'),
+            apiRequest('/user-tasks')
+        ]);
+
+        if (!userDataResponse || !userDataResponse.user) throw new Error("Invalid user data from server.");
+
+        userData = userDataResponse.user;
+        const earnings = userDataResponse.earnings;
+
+        gameData = gameDataResponse;
+        userProgress = userProgressResponse;
+        userProgress.completed_task_ids = userTasksResponse.filter(t => t.is_completed).map(t => t.task_id);
+
+        if (earnings && earnings.earned_passive > 0) {
+            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins while away.`, 'success');
+        }
+
+        updateUI();
+        const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
+        if (equippedImage) {
+            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
+        }
+        loadingOverlay.classList.remove('active');
+        startPassiveIncome();
+    } catch (e) {
+        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
+    }
 }
 
 
