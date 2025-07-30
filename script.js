@@ -1,388 +1,780 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const TelegramBot = require('node-telegram-bot-api');
-const supabase = require('./db');
-const crypto = require('crypto');
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-const { TELEGRAM_BOT_TOKEN, WEB_APP_URL, PORT = 10000, SUPABASE_URL, SUPABASE_KEY } = process.env;
-if (!TELEGRAM_BOT_TOKEN || !WEB_APP_URL || !SUPABASE_URL || !SUPABASE_KEY) {
-    throw new Error("Missing required environment variables!");
-}
+const API_URL = 'https://clicker-backend-chjq.onrender.com';
 
-const app = express();
+let userData = null;
+let isLoading = false;
+let isClicking = false;
+let pendingClicks = 0;
+let isSyncing = false;
+let gameData = { images: [], tasks: [] };
+let userProgress = { unlocked_image_ids: [] };
+let transactionHistory = [];
+
+const coinsEl = document.getElementById('coins');
+const coinsPerSecEl = document.getElementById('coinsPerSec');
+const coinsPerClickEl = document.getElementById('coinsPerClick');
+const clickImage = document.getElementById('clickImage');
+const upgradeClickLevelEl = document.getElementById('upgradeClickLevel');
+const upgradeClickCostEl = document.getElementById('upgradeClickCost');
+const upgradeClickBtn = document.getElementById('upgradeClickBtn');
+const upgradeAutoLevelEl = document.getElementById('upgradeAutoLevel');
+const upgradeAutoCostEl = document.getElementById('upgradeAutoCost');
+const upgradeAutoBtn = document.getElementById('upgradeAutoBtn');
+const transferUsernameEl = document.getElementById('transferUsername');
+const transferAmountEl = document.getElementById('transferAmount');
+const transferBtn = document.getElementById('transferBtn');
+const transferMessageEl = document.getElementById('transferMessage');
+const topListEl = document.getElementById('topList');
+const imagesContainer = document.getElementById('imagesContainer');
+const achievementsContainer = document.getElementById('achievementsContainer');
+const notificationContainer = document.getElementById('notificationContainer');
 
 
+const clickBaseCost = 0.000000064;
+const autoBaseCost = 0.000000128; 
+const offlineBaseCost = 0.000001;
 
-const allowedOrigins = [
-    'https://clicker-frontend-pi.vercel.app',
-    'https://web.telegram.org'
-];
 
-const corsOptions = {
-    origin: function (origin, callback) {
-        if (!origin) return callback(null, true);
-
-        const standardizedOrigin = origin.endsWith('/') ? origin.slice(0, -1) : origin;
-
-        if (allowedOrigins.indexOf(standardizedOrigin) !== -1 || /\.vercel\.app$/.test(standardizedOrigin)) {
-
-            return callback(null, true);
-        }
-
-        return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
-    },
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+const TIER_COST_MULTIPLIER = 16;
+const INTRA_TIER_COST_MULTIPLIER = 1.215;
+const upgrades = {
+    click: [
+        { id: 'click_tier_1', name: 'A Cups', benefit: '+0.000000001 per click', base_cost: 0.000000064, tier: 1 },
+        { id: 'click_tier_2', name: 'B Cups', benefit: '+0.000000008 per click', base_cost: 0.000001024, tier: 2 },
+        { id: 'click_tier_3', name: 'C Cups', benefit: '+0.000000064 per click', base_cost: 0.000016384, tier: 3 },
+        { id: 'click_tier_4', name: 'D Cups', benefit: '+0.000000512 per click', base_cost: 0.000262144, tier: 4 },
+        { id: 'click_tier_5', name: 'DD Cups', benefit: '+0.000004096 per click', base_cost: 0.004194304, tier: 5 },
+    ],
+    auto: [
+        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000001 per sec', base_cost: 0.000000064, tier: 1 },
+        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000008 per sec', base_cost: 0.000001024, tier: 2 },
+        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000064 per sec', base_cost: 0.000016384, tier: 3 },
+        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000000512 per sec', base_cost: 0.000262144, tier: 4 },
+        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000004096 per sec', base_cost: 0.004194304, tier: 5 },
+    ],
+    offline: [
+        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001 per hour', base_cost: 0.000000064, tier: 1 },
+        { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008 per hour', base_cost: 0.000001024, tier: 2 },
+        { id: 'offline_tier_3', name: 'Padded Bra', benefit: '+0.000000064 per hour', base_cost: 0.000016384, tier: 3 },
+        { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512 per hour', base_cost: 0.000262144, tier: 4 },
+        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096 per hour', base_cost: 0.004194304, tier: 5 },
+    ]
 };
 
 
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-app.use(express.json());
-app.use(helmet.contentSecurityPolicy({
-    directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://telegram.org"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https://pngimg.com", "https://i1.sndcdn.com"],
-        connectSrc: ["'self'", "https://*.supabase.co", "https://clicker-backend-chjq.onrender.com"],
-    }
-}));
-
-const bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
-
-bot.on('polling_error', (error) => {
-    console.error(`Polling error: ${error.code} - ${error.message}`);
-    if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-        console.warn('Conflict error detected. This instance will stop polling.');
-        bot.stopPolling();
-    }
-});
-
-
-
-app.get('/', (req, res) => {
-    res.json({ status: 'ok', message: 'Welcome to Clicker Backend' });
-});
-
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-
-const validateTelegramAuth = (req, res, next) => {
-    try {
-        const authHeader = req.headers['authorization'];
-        if (!authHeader) return res.status(401).json({ error: 'Missing Telegram InitData' });
-
-        const initData = new URLSearchParams(authHeader);
-        const hash = initData.get('hash');
-        const dataToCheck = [];
-
-        initData.sort();
-        initData.forEach((val, key) => {
-            if (key !== 'hash') dataToCheck.push(`${key}=${val}`);
-        });
-
-        const secret = crypto.createHmac('sha256', 'WebAppData')
-            .update(TELEGRAM_BOT_TOKEN)
-            .digest();
-        const calculatedHash = crypto.createHmac('sha256', secret)
-            .update(dataToCheck.join('\n'))
-            .digest('hex');
-
-        if (calculatedHash !== hash) {
-            return res.status(403).json({ error: 'Invalid hash' });
-        }
-
-        const user = initData.get('user');
-        if (!user) return res.status(400).json({ error: 'User data missing' });
-
-        req.user = JSON.parse(user);
-        next();
-    } catch (err) {
-        console.error('Auth error:', err);
-        res.status(400).json({ error: 'Invalid initData' });
-    }
+const pages = {
+    main: document.getElementById('main'),
+    upgrade: document.getElementById('upgrade'),
+    tasks: document.getElementById('tasks'),
+    images: document.getElementById('images'),
+    top: document.getElementById('top'),
+    transfer: document.getElementById('transfer'),
 };
 
+const navButtons = {
+    main: document.getElementById('nav-main'),
+    upgrade: document.getElementById('nav-upgrade'),
+    tasks: document.getElementById('nav-tasks'), 
+    images: document.getElementById('nav-images'),
+    top: document.getElementById('nav-top'),
+    transfer: document.getElementById('nav-transfer'),
+};
 
-async function getDBUser(telegramId) {
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegramId);
+const offlineRateEl = document.getElementById('offlineRate');
 
-    if (error) {
-        console.error(`Error fetching user:`, error.message);
-        return null;
+function showPage(pageId) {
+    if (!pages[pageId] || !navButtons[pageId]) return;
+
+    Object.values(pages).forEach(p => p.classList.remove('active'));
+    Object.values(navButtons).forEach(b => b.classList.remove('active'));
+
+    pages[pageId].classList.add('active');
+
+    if (navButtons[pageId]) {
+        navButtons[pageId].classList.add('active');
     }
-    return users?.[0] || null;
+
+  
+    switch (pageId) {
+        case 'top': loadTopPlayers(); break;
+        case 'images': loadImages(); break;
+        case 'tasks': loadAchievements(); break;
+        case 'transfer': loadHistory(); break; 
+    }
 }
 
+Object.keys(navButtons).forEach(key => {
+    if (navButtons[key]) navButtons[key].onclick = () => showPage(key);
+});
 
+document.addEventListener('DOMContentLoaded', () => {
+    for (const id in upgrades) {
+        const button = document.querySelector(`#upgrade_${id} .action-button`);
+        if (button) button.onclick = () => purchaseUpgrade(id);
+    }
+});
 
-app.get('/api/user', validateTelegramAuth, async (req, res) => {
+async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
-        const dbUser = await getDBUser(req.user.id);
-        if (!dbUser) {
-            return res.status(404).json({ error: 'User not found' });
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': Telegram.WebApp.initData || ''
+        };
+
+        const options = { method, headers };
+        if (body) {
+            options.body = JSON.stringify(body);
         }
 
-        const { data: earningsData, error: rpcError } = await supabase.rpc('process_passive_income', { p_user_id: dbUser.id });
-        if (rpcError) throw rpcError;
+        const response = await fetch(`${API_URL}/api${endpoint}`, options);
 
-        const updatedUser = await getDBUser(req.user.id);
+        if (!response.ok) {
+            const responseData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
+            throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
+        }
 
-        res.json({ user: updatedUser, earnings: earningsData });
-
-    } catch (err) {
-        console.error("Error in /user endpoint:", err);
-        res.status(500).json({ error: 'Server error during user fetch' });
-    }
-});
-
-app.post('/api/click', validateTelegramAuth, async (req, res) => {
-    try {
-        const user = await getDBUser(req.user.id);
-        if (!user) return res.status(404).json({ error: 'User not found' });
-
-        const updates = {
-            coins: user.coins + user.coins_per_click,
-            total_clicks: user.total_clicks + 1,
-            total_coins_earned: user.total_coins_earned + user.coins_per_click,
-            last_active: new Date().toISOString(),
-        };
-
-        const { data: updatedUser, error } = await supabase
-            .from('users')
-            .update(updates)
-            .eq('telegram_id', req.user.id)
-            .select()
-            .single();
-
-        if (error) throw error;
-
-        await supabase.from('user_logs').insert({
-            user_id: user.id,
-            action: 'click',
-            details: { coins_earned: user.coins_per_click }
-        });
-
-        res.json(updatedUser);
-    } catch (err) {
-        console.error("Error in /click:", err);
-        res.status(500).json({ error: 'Failed to process click' });
-    }
-});
-
-app.post('/api/upgrade', validateTelegramAuth, async (req, res) => {
-    const { upgradeId } = req.body;
-
-    if (!upgradeId) {
-        return res.status(400).json({ error: 'Missing upgradeId' });
-    }
-
-    try {
-        const dbUser = await getDBUser(req.user.id);
-        if (!dbUser) return res.status(404).json({ error: 'User not found in DB' });
-
-        await supabase
-            .from('users')
-            .update({ total_upgrades: dbUser.total_upgrades + 1 })
-            .eq('id', dbUser.id);
-
-
-        const { error } = await supabase.rpc('purchase_upgrade', {
-            p_user_id: dbUser.id,
-            p_upgrade_id: upgradeId
-        });
-
-        if (error) throw error;
-
-        const updatedUser = await getDBUser(req.user.id);
-        res.json(updatedUser);
-
-    } catch (err) {
-        console.error(`Error in /upgrade for ${upgradeId}:`, err);
-        const message = err.message.includes('Not enough coins') ? 'You do not have enough coins for this upgrade.' : 'Upgrade failed.';
-        res.status(400).json({ error: message });
-    }
-});
-
-
-app.get('/api/top', async (req, res) => {
-    const sortBy = req.query.sortBy || 'coins';
-
-    const allowedSortColumns = ['coins', 'coins_per_click', 'coins_per_sec', 'offline_coins_per_hour'];
-    if (!allowedSortColumns.includes(sortBy)) {
-        return res.status(400).json({ error: 'Invalid sort parameter' });
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('users')
-            .select(`username, ${sortBy}`)
-            .order(sortBy, { ascending: false })
-            .limit(10);
-
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        console.error(`Error in /top for sortBy=${sortBy}:`, err);
-        res.status(500).json({ error: 'Failed to load top players' });
-    }
-});
-
-app.get('/api/transfers', validateTelegramAuth, async (req, res) => {
-    const dbUser = await getDBUser(req.user.id);
-    if (!dbUser) return res.status(404).json({ error: 'User not found' });
-
-    try {
-        const { data, error } = await supabase
-            .from('transfer_history')
-            .select(`*, from:from_user_id(username), to:to_user_id(username)`)
-            .or(`from_user_id.eq.${dbUser.id},to_user_id.eq.${dbUser.id}`)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to load transfers' });
-    }
-});
-
-
-
-app.get('/api/game-data', validateTelegramAuth, async (req, res) => {
-    try {
-        const { data: images, error: imgError } = await supabase.from('images').select('*');
-        if (imgError) throw imgError;
-
-        const { data: tasks, error: taskError } = await supabase.from('tasks').select('*');
-        if (taskError) throw taskError;
-
-        res.json({ images, tasks });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to load game data' });
-    }
-});
-
-app.get('/api/user-progress', validateTelegramAuth, async (req, res) => {
-    const dbUser = await getDBUser(req.user.id);
-    if (!dbUser) return res.status(404).json({ error: 'User not found' });
-
-    try {
-        const { data: user_images, error } = await supabase.from('user_images').select('image_id').eq('user_id', dbUser.id);
-        if (error) throw error;
-
-        res.json({ unlocked_image_ids: user_images.map(img => img.image_id) });
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to load user progress' });
-    }
-});
-
-
-app.post('/api/images/buy', validateTelegramAuth, async (req, res) => {
-    const { imageId } = req.body;
-    const dbUser = await getDBUser(req.user.id);
-
-    const { data: image } = await supabase.from('images').select('cost').eq('id', imageId).single();
-    if (!image || dbUser.coins < image.cost) {
-        return res.status(400).json({ error: 'Cannot afford this image' });
-    }
-
-    await supabase.from('users').update({ coins: dbUser.coins - image.cost }).eq('id', dbUser.id);
-    await supabase.from('user_images').insert({ user_id: dbUser.id, image_id: imageId });
-
-    res.json({ success: true });
-});
-
-
-app.post('/api/images/select', validateTelegramAuth, async (req, res) => {
-    const { imageId } = req.body;
-    const dbUser = await getDBUser(req.user.id);
-
-    await supabase.from('users').update({ equipped_image_id: imageId }).eq('id', dbUser.id);
-
-    const updatedUser = await getDBUser(req.user.id);
-    res.json(updatedUser);
-});
-
-app.get('/api/user-tasks', validateTelegramAuth, async (req, res) => {
-    const dbUser = await getDBUser(req.user.id);
-    if (!dbUser) return res.status(404).json({ error: 'User not found' });
-
-    try {
-        const { data, error } = await supabase.rpc('check_user_tasks', { p_user_id: dbUser.id });
-        if (error) throw error;
-        res.json(data);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to check tasks' });
-    }
-});
-
-bot.onText(/\/start/, async (msg) => {
-    try {
-        const { id: telegram_id, username, first_name, last_name } = msg.from;
-
-        const newUserProfile = {
-            telegram_id,
-            username: username || `user_${telegram_id}`,
-            first_name,
-            last_name,
-            coins: 0.000000000,
-            coins_per_click: 0.000000001,
-            coins_per_sec: 0,
-            offline_coins_per_hour: 0,
-
-            click_tier_1_level: 0,
-            click_tier_2_level: 0,
-            click_tier_3_level: 0,
-            click_tier_4_level: 0,
-            click_tier_5_level: 0,
-            auto_tier_1_level: 0,
-            auto_tier_2_level: 0,
-            auto_tier_3_level: 0,
-            auto_tier_4_level: 0,
-            auto_tier_5_level: 0,
-            offline_tier_1_level: 0,
-            offline_tier_2_level: 0,
-            offline_tier_3_level: 0,
-            offline_tier_4_level: 0,
-            offline_tier_5_level: 0,
-
-            total_clicks: 0,
-            total_coins_earned: 0.0,
-            last_active: new Date().toISOString()
-        };
-
-        const { error } = await supabase
-            .from('users')
-            .upsert(newUserProfile, { onConflict: 'telegram_id' });
-
-        if (error) throw error;
-
-        bot.sendMessage(msg.chat.id, "Welcome! Click below to play.", {
-            reply_markup: {
-                inline_keyboard: [[{
-                    text: "🚀 Open Game",
-                    web_app: { url: WEB_APP_URL }
-                }]]
-            }
-        });
+        return await response.json();
     } catch (error) {
-        console.error("Error in /start:", error);
-        bot.sendMessage(msg.chat.id, "Sorry, an error occurred. Please try again.");
+        console.error(`API request to ${endpoint} failed:`, error);
+        showNotification(error.message, 'error');
+        throw error;
     }
-});
+}
 
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+function openUpgradeTab(evt, tabName) {
+    document.querySelectorAll('.upgrade-tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.upgrade-tab-link').forEach(link => link.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    evt.currentTarget.classList.add('active');
+}
+
+
+// function updateUI() {
+//     if (!userData) return;
+//     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+//     coinsPerSecEl.textContent = userData.coins_per_sec.toLocaleString();
+//     coinsPerClickEl.textContent = userData.coins_per_click.toLocaleString();
+//     upgradeClickLevelEl.textContent = userData.click_upgrade_level;
+//     upgradeClickCostEl.textContent = userData.click_upgrade_cost.toLocaleString();
+//     upgradeAutoLevelEl.textContent = userData.auto_upgrade_level;
+//     upgradeAutoCostEl.textContent = userData.auto_upgrade_cost.toLocaleString();
+//     clickImage.className = `click-image ${userData.current_image || 'default'}`;
+
+//     upgradeClickBtn.disabled = userData.coins < userData.click_upgrade_cost;
+//     upgradeAutoBtn.disabled = userData.coins < userData.auto_upgrade_cost;
+// }
+
+function calculateCost(base, multiplier, level) {
+    return Math.floor(base * Math.pow(multiplier, level));
+}
+
+function formatCoins(amount) {
+    if (typeof amount !== 'number') return '0.000000000';
+    return amount.toFixed(9);
+}
+
+
+function generateUpgradeHTML() {
+    const clickContainer = document.getElementById('clickUpgrades');
+    const autoContainer = document.getElementById('autoUpgrades');
+    const offlineContainer = document.getElementById('offlineUpgrades');
+
+    clickContainer.innerHTML = '';
+    autoContainer.innerHTML = '';
+    offlineContainer.innerHTML = '';
+
+    const createHTML = (upgrade) => `
+        <div class="upgrade-item" id="${upgrade.id}">
+            <div class="upgrade-icon">${upgrade.tier}</div>
+            <div class="upgrade-details">
+                <h3>${upgrade.name}</h3>
+                <p>${upgrade.benefit} per click/sec</p>
+                <p>Level: <span id="${upgrade.id}_level">0</span></p>
+            </div>
+            <div class="upgrade-action">
+                <button class="action-button">
+                    <span class="cost">Cost: <span id="${upgrade.id}_cost">0</span></span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    upgrades.click.forEach(u => clickContainer.innerHTML += createHTML(u));
+    upgrades.auto.forEach(u => autoContainer.innerHTML += createHTML(u));
+    upgrades.offline.forEach(u => offlineContainer.innerHTML += createHTML(u));
+
+    for (const type in upgrades) {
+        upgrades[type].forEach(upgrade => {
+            const button = document.querySelector(`#${upgrade.id} .action-button`);
+            if (button) button.onclick = () => purchaseUpgrade(upgrade.id);
+        });
+    }
+
+}
+
+function updateUI() {
+    if (!userData) return;
+
+    coinsEl.textContent = formatCoins(userData.coins);
+    coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
+    coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
+    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
+
+    for (const type in upgrades) {
+        upgrades[type].forEach(upgrade => {
+            const level = userData[`${upgrade.id}_level`] || 0;
+            const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
+
+            const levelEl = document.getElementById(`${upgrade.id}_level`);
+            const costEl = document.getElementById(`${upgrade.id}_cost`);
+            const button = document.querySelector(`#${upgrade.id} .action-button`);
+
+            if (levelEl) levelEl.textContent = level;
+            if (costEl) costEl.textContent = formatCoins(cost);
+            if (button) button.disabled = userData.coins < cost;
+        });
+    }
+}
+
+async function purchaseUpgrade(upgradeId) {
+    try {
+        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
+        userData = updatedUser;
+        updateUI();
+        showNotification('Upgrade successful!', 'success');
+        tg.HapticFeedback.notificationOccurred('success');
+    } catch (e) {
+        showNotification(e.message, 'error');
+        tg.HapticFeedback.notificationOccurred('error');
+    }
+}
+
+clickImage.onclick = (event) => {
+    if (!userData) return;
+    tg.HapticFeedback.impactOccurred('light');
+
+    userData.coins += userData.coins_per_click;
+    updateUI();
+    showFloatingCoin(event.clientX, event.clientY, `+${formatCoins(userData.coins_per_click)}`);
+
+    apiRequest('/click', 'POST')
+        .catch(err => {
+            console.error("Click sync failed:", err);
+        });
+};
+
+async function syncClicksToServer() {
+    if (isSyncing || pendingClicks === 0) return;
+
+    isSyncing = true;
+    const clicksToSync = pendingClicks;
+    pendingClicks = 0; 
+
+    try {
+        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSync });
+        if (updatedUser) {
+            userData = updatedUser;
+            updateUI();
+        }
+    } 
+    
+    catch (err) {
+        console.error("Failed to sync clicks with server:", err);
+        pendingClicks += clicksToSync; 
+    } 
+    
+    finally {
+        isSyncing = false;
+
+        if (pendingClicks > 0) {
+            setTimeout(syncClicksToServer, 100);
+        }
+    }
+}
+
+
+// clickImage.onclick = (event) => {
+//     if (!userData) return;
+
+//     tg.HapticFeedback.impactOccurred('light');
+
+//     userData.coins += userData.coins_per_click;
+
+//     coinsEl.textContent = parseFloat(userData.coins)
+//     .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+
+//     showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(10)}`);
+//     apiRequest('/click', 'POST')
+//     .then(user => { userData = user; })
+//     .catch(err => console.error(err));
+// };
+
+// upgradeClickBtn.onclick = async () => {
+//     tg.HapticFeedback.notificationOccurred('success');
+//     try {
+
+//         const updatedUser = await apiRequest('/upgrade/click', 'POST');
+//         userData = updatedUser;
+//         updateUI();
+//         showNotification('Click power upgraded!', 'success');
+//     } catch (e) { }
+// };
+
+// upgradeAutoBtn.onclick = async () => {
+//     try {
+//         const updatedUser = await apiRequest('/upgrade/auto', 'POST');
+//         userData = updatedUser;
+//         updateUI();
+//         showNotification('Auto income upgraded!', 'success');
+//     } catch (e) {}
+// };
+
+transferBtn.onclick = async () => {
+    const toUsername = transferUsernameEl.value.trim().replace(/^@/, '');
+    const amount = parseInt(transferAmountEl.value, 16);
+
+    if (!toUsername || !amount || amount <= 0) {
+        transferMessageEl.textContent = 'Please enter a valid username and amount.';
+        transferMessageEl.className = 'transfer-message error';
+        return;
+    }
+
+    try {
+        const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
+        userData = result.updatedSender;
+        updateUI();
+        transferMessageEl.textContent = result.message;
+        transferMessageEl.className = 'transfer-message success';
+        transferUsernameEl.value = '';
+        transferAmountEl.value = '';
+    } catch (e) {
+        transferMessageEl.textContent = e.message;
+        transferMessageEl.className = 'transfer-message error';
+    }
+};
+
+function openTopTab(evt, sortBy) {
+    document.querySelectorAll('.top-tab-link').forEach(link => link.classList.remove('active'));
+    evt.currentTarget.classList.add('active');
+    loadTopPlayers(sortBy);
+}
+
+// async function loadTopPlayers(sortBy = 'coins') {
+//     try {
+//         const topListEl = document.getElementById('topList');
+//         topListEl.innerHTML = '<li>Loading...</li>';
+//         const players = await apiRequest(`/top?sortBy=${sortBy}`);
+
+//         const formatValue = (value) => {
+//             return parseFloat(value).toFixed(16);
+//         };
+
+//         topListEl.innerHTML = '';
+//         players.forEach((player, idx) => {
+//             const li = document.createElement('li');
+//             li.innerHTML = `
+//                 <span class="rank">${idx + 1}.</span>
+//                 <span class="name">@${player.username || 'anonymous'}</span>
+//                 <span class="value">${formatValue(player[sortBy])}</span>
+//             `;
+//             topListEl.appendChild(li);
+//         });
+//     } catch (e) {
+//         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
+//     }
+// }
+
+// function startPassiveIncome() {
+//     setInterval(() => {
+//         if (userData && userData.coins_per_sec > 0) {
+//             userData.coins += userData.coins_per_sec;
+//             coinsEl.textContent = parseFloat(userData.coins)
+//             .toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 10 });
+//         }
+//     }, 1000);
+// }
+
+
+async function loadTopPlayers(sortBy = 'coins') {
+    try {
+        const topListEl = document.getElementById('topList');
+        topListEl.innerHTML = '<li>Loading...</li>';
+        const players = await apiRequest(`/top?sortBy=${sortBy}`);
+
+        topListEl.innerHTML = '';
+        players.forEach((player, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="rank">${idx + 1}.</span>
+                <span class="name">@${player.username || 'anonymous'}</span>
+                <span class="value">${formatCoins(player[sortBy])}</span>
+            `;
+            topListEl.appendChild(li);
+        });
+    } catch (e) {
+        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
+    }
+}
+
+
+function startPassiveIncome() {
+    setInterval(() => {
+        if (userData && userData.coins_per_sec > 0) {
+
+            userData.coins += userData.coins_per_sec;
+            updateUI();
+        }
+    }, 1000);
+}
+
+
+
+async function loadImages() {
+    const container = document.getElementById('imagesContainer');
+    container.innerHTML = ''; 
+
+    gameData.images.forEach(image => {
+        const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
+        const isEquipped = userData.equipped_image_id === image.id;
+
+        const card = document.createElement('div');
+        card.className = `image-card ${isEquipped ? 'selected' : ''}`;
+
+        let buttonHtml = '';
+        if (isEquipped) {
+            buttonHtml = `<button class="action-button" disabled>Equipped</button>`;
+        } else if (isUnlocked) {
+            buttonHtml = `<button class="action-button" onclick="selectImage(${image.id})">Select</button>`;
+        } else if (image.cost > 0) {
+            buttonHtml = `<button class="action-button" onclick="buyImage(${image.id}, ${image.cost})" ${userData.coins < image.cost ? 'disabled' : ''}>Buy: ${image.cost}</button>`;
+        } else {
+            buttonHtml = `<button class="action-button" disabled>Locked by Task</button>`;
+        }
+
+        card.innerHTML = `
+            <div class="image-preview" style="background-image: url('${image.image_url}')"></div>
+            <div class="image-info">
+                <h3>${image.name}</h3>
+                <p>${image.description || ''}</p>
+                ${buttonHtml}
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+async function buyImage(imageId, cost) {
+    if (userData.coins < cost) return;
+    try {
+        await apiRequest('/images/buy', 'POST', { imageId });
+        userData.coins -= cost; 
+        userProgress.unlocked_image_ids.push(imageId);
+        loadImages();
+        updateUI();
+    } catch (e) {}
+}
+
+async function selectImage(imageId) {
+    try {
+        const updatedUser = await apiRequest('/images/select', 'POST', { imageId });
+        userData = updatedUser;
+        const selectedImageUrl = gameData.images.find(img => img.id === imageId)?.image_url;
+        if (selectedImageUrl) {
+            document.getElementById('clickImage').style.backgroundImage = `url('${selectedImageUrl}')`;
+        }
+        loadImages();
+    } catch (e) {}
+}
+
+// function loadHistory() {
+//     const searchInput = document.getElementById('history-search');
+
+//     apiRequest('/transfers').then(data => {
+//         transactionHistory = data;
+//         renderHistory(); 
+//     });
+
+//     searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
+// }
+
+
+async function loadHistory() {
+    const list = document.getElementById('history-list');
+    const searchInput = document.getElementById('history-search');
+    list.innerHTML = '<li>Loading...</li>';
+
+    try {
+        const data = await apiRequest('/transfers');
+        transactionHistory = data;
+        renderHistory();
+    } catch (e) {
+        list.innerHTML = '<li class="error">Failed to load transaction history.</li>';
+    }
+
+    searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
+}
+
+function renderHistory(filter = '') {
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+
+    const filtered = transactionHistory.filter(tx =>
+        (tx.from?.username || '').toLowerCase().includes(filter) ||
+        (tx.to?.username || '').toLowerCase().includes(filter)
+    );
+
+    if (filtered.length === 0) {
+        list.innerHTML = '<li>No transactions found.</li>';
+        return;
+    }
+
+    filtered.forEach(tx => {
+        const item = document.createElement('li');
+        item.className = 'history-item';
+
+        const isSent = tx.from.username === userData.username;
+        const direction = isSent ? 'Sent to' : 'Received from';
+        const otherUser = isSent ? tx.to.username : tx.from.username;
+        const amountClass = isSent ? 'sent' : 'received';
+        const sign = isSent ? '-' : '+';
+
+        item.innerHTML = `
+            <div class="history-details">
+                <p>${direction} <b>@${otherUser || 'anonymous'}</b></p>
+                <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
+            </div>
+            <div class="history-amount ${amountClass}">
+                ${sign}${formatCoins(parseFloat(tx.amount))}
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+
+// function loadAchievements() {
+//     const tasksContainer = document.getElementById('tasks-content');
+//     const achievementsContainer = document.getElementById('achievements-content');
+//     tasksContainer.innerHTML = '';
+//     achievementsContainer.innerHTML = '';
+
+//     gameData.tasks.forEach(task => {
+//         const isCompleted = userProgress.completed_task_ids.includes(task.id);
+//         const cardHtml = `
+//             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
+//                 <div class="achievement-icon">🏆</div>
+//                 <div class="achievement-content">
+//                     <h3>${task.name}</h3>
+//                     <p>${task.description}</p>
+//                 </div>
+//             </div>`;
+
+//         if (isCompleted) {
+//             achievementsContainer.innerHTML += cardHtml;
+//         } else {
+//             tasksContainer.innerHTML += cardHtml;
+//         }
+//     });
+
+//     if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
+//     if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
+// }
+
+function loadAchievements() {
+    const tasksContainer = document.getElementById('tasks-content');
+    const achievementsContainer = document.getElementById('achievements-content');
+    tasksContainer.innerHTML = '';
+    achievementsContainer.innerHTML = '';
+
+    if (!gameData.tasks || gameData.tasks.length === 0) {
+        tasksContainer.innerHTML = '<p class="empty-state">No tasks available.</p>';
+        achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
+        return;
+    }
+
+    let activeTasksFound = false;
+    let completedAchievementsFound = false;
+
+    gameData.tasks.forEach(task => {
+        const isCompleted = userProgress.completed_task_ids && userProgress.completed_task_ids.includes(task.id);
+
+        let progressHtml = '';
+        
+        if (!isCompleted && task.task_type.startsWith('total_')) {
+            const currentProgress = userData[task.task_type] || 0;
+            const percentage = Math.min(100, (currentProgress / task.threshold) * 100);
+            progressHtml = `<div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>`;
+        }
+
+        const cardHtml = `
+            <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
+                <div class="achievement-icon">
+                    ${isCompleted ? '✅' : '🎯'}
+                </div>
+                <div class="achievement-content">
+                    <h3>${task.name}</h3>
+                    <p>${task.description}</p>
+                    ${progressHtml}
+                </div>
+            </div>`;
+
+        if (isCompleted) {
+            achievementsContainer.innerHTML += cardHtml;
+            completedAchievementsFound = true;
+        } else {
+            tasksContainer.innerHTML += cardHtml;
+            activeTasksFound = true;
+        }
+    });
+
+    if (!activeTasksFound) tasksContainer.innerHTML = '<p class="empty-state">No active tasks remaining!</p>';
+    if (!completedAchievementsFound) achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    notificationContainer.appendChild(notification);
+
+    setTimeout(() => { notification.classList.add('show'); }, 10);
+    setTimeout(() => {
+        notification.classList.remove('show');
+        notification.addEventListener('transitionend', () => notification.remove());
+    }, 3000);
+}
+
+function showFloatingCoin(x, y, amount) {
+    const coin = document.createElement('div');
+    coin.className = 'floating-coin';
+    coin.textContent = amount;
+    coin.style.left = `${x - 15}px`; 
+    coin.style.top = `${y - 30}px`;
+    document.body.appendChild(coin);
+
+    setTimeout(() => {
+        coin.style.transform = 'translateY(-50px)';
+        coin.style.opacity = '0';
+    }, 10);
+    setTimeout(() => coin.remove(), 1000);
+}
+
+
+
+
+async function init() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    generateUpgradeHTML();
+
+    try {
+        const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
+            apiRequest('/user'),
+            apiRequest('/game-data'),
+            apiRequest('/user-progress'),
+            apiRequest('/user-tasks')
+        ]);
+
+        userData = userDataResponse.user;
+        gameData = gameDataResponse;
+        userProgress = userProgressResponse;
+        userProgress.completed_task_ids = userTasksResponse.filter(t => t.is_completed).map(t => t.task_id);
+
+        const earnings = userDataResponse.earnings;
+        if (earnings && earnings.earned_passive > 0) {
+            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins.`, 'success');
+        }
+
+        updateUI();
+
+        const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
+        if (equippedImage) {
+            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
+        }
+
+        loadingOverlay.classList.remove('active');
+        startPassiveIncome();
+    } catch (e) {
+        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
+        console.error("Initialization failed:", e);
+    }
+}
+
+
+
+function openSubTab(evt, tabId) {
+
+    const parentPage = evt.target.closest('.page');
+
+    parentPage.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+    parentPage.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
+    parentPage.querySelector(`#${tabId}`).classList.add('active');
+
+    evt.target.classList.add('active');
+}
+
+function startPassiveIncome() {
+    setInterval(() => {
+        if (userData && userData.coins_per_sec > 0) {
+            userData.coins += userData.coins_per_sec;
+            updateUI();
+        }
+    }, 1000);
+}
+
+async function handleTransfer() {
+    const toUsername = document.getElementById('transferUsername').value.trim().replace(/^@/, '');
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const transferMessageEl = document.getElementById('transferMessage');
+
+    if (!toUsername || !amount || isNaN(amount) || amount <= 0) {
+        transferMessageEl.textContent = 'Please enter a valid username and amount.';
+        transferMessageEl.className = 'transfer-message error';
+        return;
+    }
+
+    // Optional: Add a confirmation before sending
+    // if (!confirm(`Send ${formatCoins(amount)} coins to @${toUsername}?`)) {
+    //     return;
+    // }
+
+    try {
+        const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
+        userData = result.updatedSender;
+        updateUI();
+        transferMessageEl.textContent = result.message;
+        transferMessageEl.className = 'transfer-message success';
+        
+        // Clear the input fields on success
+        document.getElementById('transferUsername').value = '';
+        document.getElementById('transferAmount').value = '';
+
+    } catch (e) {
+        transferMessageEl.textContent = e.message;
+        transferMessageEl.className = 'transfer-message error';
+    }
+}
+
+function setupEventListeners() {
+
+    for (const key in navButtons) {
+        if (navButtons[key]) {
+            navButtons[key].onclick = () => showPage(key);
+        }
+    }
+
+    const gotoImagesBtn = document.getElementById('goto-images-btn');
+    if (gotoImagesBtn) {
+        gotoImagesBtn.onclick = () => showPage('images');
+    }
+
+    const transferBtn = document.getElementById('transferBtn');
+    if (transferBtn) transferBtn.onclick = handleTransfer; 
+}
+
+tg.ready();
+setupEventListeners();
+init();
+showPage('main');
