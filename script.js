@@ -8,6 +8,9 @@ let isLoading = false;
 let isClicking = false;
 let pendingClicks = 0;
 let isSyncing = false;
+let gameData = { images: [], tasks: [] };
+let userProgress = { unlocked_image_ids: [] };
+let transactionHistory = [];
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -51,19 +54,22 @@ const upgrades = {
 
 const pages = {
     main: document.getElementById('main'),
-    top: document.getElementById('top'),
     upgrade: document.getElementById('upgrade'),
     images: document.getElementById('images'),
     achievements: document.getElementById('achievements'),
+    top: document.getElementById('top'),
     transfer: document.getElementById('transfer'),
+    history: document.getElementById('history')
 };
+
 const navButtons = {
     main: document.getElementById('nav-main'),
-    top: document.getElementById('nav-top'),
     upgrade: document.getElementById('nav-upgrade'),
     images: document.getElementById('nav-images'),
     achievements: document.getElementById('nav-achievements'),
-    transfer: document.getElementById('nav-transfer'), 
+    top: document.getElementById('nav-top'),
+    transfer: document.getElementById('nav-transfer'),
+    history: document.getElementById('nav-history')
 };
 
 const offlineRateEl = document.getElementById('offlineRate');
@@ -81,6 +87,7 @@ function showPage(pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
         case 'achievements': loadAchievements(); break;
+        case 'history': loadHistory(); break;
     }
 }
 
@@ -373,88 +380,103 @@ function startPassiveIncome() {
 
 
 async function loadImages() {
-    try {
-        const { allImages, userImages, currentImageId } = await apiRequest('/images');
-        imagesContainer.innerHTML = '';
-        allImages.forEach(image => {
-            const isUnlocked = userImages.some(ui => ui.image_id === image.id);
-            const isSelected = currentImageId === image.id;
+    const container = document.getElementById('imagesContainer');
+    container.innerHTML = ''; // Clear old content
 
-            const imageCard = document.createElement('div');
-            imageCard.className = `image-card ${isUnlocked ? 'unlocked' : 'locked'} ${isSelected ? 'selected' : ''}`;
+    gameData.images.forEach(image => {
+        const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
+        const isEquipped = userData.equipped_image_id === image.id;
 
-            const imagePreview = document.createElement('div');
-            imagePreview.className = `image-preview image-${image.id}`;
+        const card = document.createElement('div');
+        card.className = `image-card ${isEquipped ? 'selected' : ''}`;
 
-            const imageInfo = document.createElement('div');
-            imageInfo.className = 'image-info';
+        let buttonHtml = '';
+        if (isEquipped) {
+            buttonHtml = `<button class="action-button" disabled>Equipped</button>`;
+        } else if (isUnlocked) {
+            buttonHtml = `<button class="action-button" onclick="selectImage(${image.id})">Select</button>`;
+        } else if (image.cost > 0) {
+            buttonHtml = `<button class="action-button" onclick="buyImage(${image.id}, ${image.cost})" ${userData.coins < image.cost ? 'disabled' : ''}>Buy: ${image.cost}</button>`;
+        } else {
+            buttonHtml = `<button class="action-button" disabled>Locked by Task</button>`;
+        }
 
-            const imageName = document.createElement('h3');
-            imageName.textContent = image.name;
-
-            const imageBonus = document.createElement('p');
-            imageBonus.className = 'bonus';
-            imageBonus.textContent = `+${image.coins_per_click_bonus || 0} coins/click`;
-
-            const imageStatus = document.createElement('div');
-            imageStatus.className = 'status';
-
-            if (isUnlocked) {
-                if (isSelected) {
-                    imageStatus.textContent = 'Selected';
-                } else {
-                    const selectBtn = document.createElement('button');
-                    selectBtn.className = 'select-btn';
-                    selectBtn.textContent = 'Select';
-                    selectBtn.onclick = () => selectImage(image.id);
-                    imageStatus.appendChild(selectBtn);
-                }
-            } else {
-                const cost = document.createElement('p');
-                cost.className = 'cost';
-                cost.textContent = `${image.cost.toLocaleString()} 🪙`;
-
-                const buyBtn = document.createElement('button');
-                buyBtn.className = 'buy-btn';
-                buyBtn.textContent = 'Buy';
-                buyBtn.onclick = () => buyImage(image.id, image.cost);
-                buyBtn.disabled = userData.coins < image.cost; 
-
-                imageStatus.appendChild(cost);
-                imageStatus.appendChild(buyBtn);
-            }
-
-            imageInfo.append(imageName, imageBonus, imageStatus);
-            imageCard.append(imagePreview, imageInfo);
-            imagesContainer.appendChild(imageCard);
-        });
-    } catch (e) {
-        imagesContainer.innerHTML = '<div class="error">Failed to load images.</div>';
-    }
+        card.innerHTML = `
+            <div class="image-preview" style="background-image: url('${image.image_url}')"></div>
+            <div class="image-info">
+                <h3>${image.name}</h3>
+                <p>${image.description || ''}</p>
+                ${buttonHtml}
+            </div>
+        `;
+        container.appendChild(card);
+    });
 }
 
 async function buyImage(imageId, cost) {
-    if (userData.coins < cost) {
-        showNotification("You don't have enough coins!", 'error');
-        return;
-    }
+    if (userData.coins < cost) return;
     try {
-        const updatedUser = await apiRequest('/images/buy', 'POST', { imageId });
-        userData = updatedUser;
+        await apiRequest('/images/buy', 'POST', { imageId });
+        userData.coins -= cost; 
+        userProgress.unlocked_image_ids.push(imageId);
+        loadImages();
         updateUI();
-        loadImages(); 
-        showNotification('Image unlocked!', 'success');
-    } catch (e) { }
+    } catch (e) {}
 }
 
 async function selectImage(imageId) {
     try {
         const updatedUser = await apiRequest('/images/select', 'POST', { imageId });
         userData = updatedUser;
-        updateUI();
-        loadImages(); 
-        showNotification('Image selected!', 'success');
-    } catch (e) { }
+        const selectedImageUrl = gameData.images.find(img => img.id === imageId)?.image_url;
+        if (selectedImageUrl) {
+            document.getElementById('clickImage').style.backgroundImage = `url('${selectedImageUrl}')`;
+        }
+        loadImages();
+    } catch (e) {}
+}
+
+function loadHistory() {
+    const searchInput = document.getElementById('history-search');
+
+    apiRequest('/transfers').then(data => {
+        transactionHistory = data;
+        renderHistory(); 
+    });
+
+    searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
+}
+
+function renderHistory(filter = '') {
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+
+    const filtered = transactionHistory.filter(tx =>
+        (tx.from?.username || '').toLowerCase().includes(filter) ||
+        (tx.to?.username || '').toLowerCase().includes(filter)
+    );
+
+    filtered.forEach(tx => {
+        const item = document.createElement('li');
+        item.className = 'history-item';
+
+        const isSent = tx.from.username === userData.username;
+        const direction = isSent ? 'Sent to' : 'Received from';
+        const otherUser = isSent ? tx.to.username : tx.from.username;
+        const amountClass = isSent ? 'sent' : 'received';
+        const sign = isSent ? '-' : '+';
+
+        item.innerHTML = `
+            <div class="history-details">
+                <p>${direction} <b>@${otherUser}</b></p>
+                <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
+            </div>
+            <div class="history-amount ${amountClass}">
+                ${sign}${parseFloat(tx.amount).toFixed(10)}
+            </div>
+        `;
+        list.appendChild(item);
+    });
 }
 
 async function loadAchievements() {
@@ -620,11 +642,11 @@ async function init() {
         userData = response.user;
         const earnings = response.earnings;
 
-        if (earnings) {
-            const totalEarned = (earnings.earned_passive || 0) + (earnings.earned_offline_bonus || 0);
-            if (totalEarned > 0) {
-                showNotification(`Welcome back! You earned ${totalEarned.toFixed(16)} coins.`, 'success');
-            }
+        gameData = await apiRequest('/game-data');
+        userProgress = await apiRequest('/user-progress');
+
+        if (earnings && earnings.earned_passive > 0) {
+            showNotification(`Welcome back! You earned ${earnings.earned_passive.toFixed(16)} coins.`, 'success');
         }
 
         updateUI();
@@ -637,7 +659,6 @@ async function init() {
     }
 }
 
-// --- CORE GAME LOOP & SYNC ---
 function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
