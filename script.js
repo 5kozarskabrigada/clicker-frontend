@@ -31,32 +31,40 @@ const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
-const TIER_COST_MULTIPLIER = 16;
-const INTRA_TIER_COST_MULTIPLIER = 1.215;
 
 const clickBaseCost = 0.000000064;
 const autoBaseCost = 0.000000128; 
 const offlineBaseCost = 0.000001;
 
 
+const TIER_COST_MULTIPLIER = 16;
+const INTRA_TIER_COST_MULTIPLIER = 1.215;
+
 const upgrades = {
-    'click_tier_1': { base_cost: clickBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'click_tier_2': { base_cost: clickBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'click_tier_3': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'click_tier_4': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'click_tier_5': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
 
-    'auto_tier_1': { base_cost: autoBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'auto_tier_2': { base_cost: autoBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'auto_tier_3': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'auto_tier_4': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
-    'auto_tier_5': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    click: [
+        { id: 'click_tier_1', name: 'A Cups', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'click_tier_2', name: 'B Cups', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'click_tier_3', name: 'C Cups', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'click_tier_4', name: 'D Cups', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'click_tier_5', name: 'DD Cups', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
+    ],
 
-    'offline_tier_1': { base_cost: offlineBaseCost, cost_mult: 1.20 },
-    'offline_tier_2': { base_cost: offlineBaseCost * TIER_COST_MULTIPLIER, cost_mult: 1.20 },
-    'offline_tier_3': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: 1.20 },
-    'offline_tier_4': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: 1.20 },
-    'offline_tier_5': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: 1.20 },
+    auto: [
+        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000005', base_cost: 0.000000128, tier: 1 },
+        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000040', base_cost: 0.000002048, tier: 2 },
+        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000320', base_cost: 0.000032768, tier: 3 },
+        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000002560', base_cost: 0.000524288, tier: 4 },
+        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000020480', base_cost: 0.008388608, tier: 5 },
+    ],
+
+    offline: [
+        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.00000005/hr', base_cost: 0.000001, tier: 1 },
+        { id: 'offline_tier_2', name: 'Padded Bra', benefit: '+0.0000004/hr', base_cost: 0.000016, tier: 2 },
+        { id: 'offline_tier_3', name: 'Push-Up Bra', benefit: '+0.0000032/hr', base_cost: 0.000256, tier: 3 },
+        { id: 'offline_tier_4', name: 'Sports Bra', benefit: '+0.0000256/hr', base_cost: 0.004096, tier: 4 },
+        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.0002048/hr', base_cost: 0.065536, tier: 5 },
+    ]
 };
 
 
@@ -170,6 +178,44 @@ function formatCoins(amount) {
 }
 
 
+function generateUpgradeHTML() {
+    const clickContainer = document.getElementById('clickUpgrades');
+    const autoContainer = document.getElementById('autoUpgrades');
+    const offlineContainer = document.getElementById('offlineUpgrades');
+
+    clickContainer.innerHTML = '';
+    autoContainer.innerHTML = '';
+    offlineContainer.innerHTML = '';
+
+    const createHTML = (upgrade) => `
+        <div class="upgrade-item" id="${upgrade.id}">
+            <div class="upgrade-icon">${upgrade.tier}</div>
+            <div class="upgrade-details">
+                <h3>${upgrade.name}</h3>
+                <p>${upgrade.benefit} per click/sec</p>
+                <p>Level: <span id="${upgrade.id}_level">0</span></p>
+            </div>
+            <div class="upgrade-action">
+                <button class="action-button">
+                    <span class="cost">Cost: <span id="${upgrade.id}_cost">0</span></span>
+                </button>
+            </div>
+        </div>
+    `;
+
+    upgrades.click.forEach(u => clickContainer.innerHTML += createHTML(u));
+    upgrades.auto.forEach(u => autoContainer.innerHTML += createHTML(u));
+    upgrades.offline.forEach(u => offlineContainer.innerHTML += createHTML(u));
+
+    for (const type in upgrades) {
+        upgrades[type].forEach(upgrade => {
+            const button = document.querySelector(`#${upgrade.id} .action-button`);
+            if (button) button.onclick = () => purchaseUpgrade(upgrade.id);
+        });
+    }
+
+}
+
 function updateUI() {
     if (!userData) return;
 
@@ -178,17 +224,19 @@ function updateUI() {
     coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
     if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
 
-    for (const id in upgrades) {
-        const level = userData[`${id}_level`] || 0;
-        const cost = upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level);
+    for (const type in upgrades) {
+        upgrades[type].forEach(upgrade => {
+            const level = userData[`${upgrade.id}_level`] || 0;
+            const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
 
-        const levelEl = document.getElementById(`${id}_level`);
-        const costEl = document.getElementById(`${id}_cost`);
-        const button = document.querySelector(`#upgrade_${id} .action-button`);
+            const levelEl = document.getElementById(`${upgrade.id}_level`);
+            const costEl = document.getElementById(`${upgrade.id}_cost`);
+            const button = document.querySelector(`#${upgrade.id} .action-button`);
 
-        if (levelEl) levelEl.textContent = level;
-        if (costEl) costEl.textContent = formatCoins(cost);
-        if (button) button.disabled = userData.coins < cost;
+            if (levelEl) levelEl.textContent = level;
+            if (costEl) costEl.textContent = formatCoins(cost);
+            if (button) button.disabled = userData.coins < cost;
+        });
     }
 }
 
@@ -618,6 +666,9 @@ function showFloatingCoin(x, y, amount) {
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
+
+    generateUpgradeHTML();
+
     try {
         const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
             apiRequest('/user'),
@@ -642,39 +693,19 @@ async function init() {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
-
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
     } catch (e) {
         document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
+        console.error("Initialization failed:", e);
     }
 }
-
-
-
-function openModal(modalId) 
-{ 
-    document.getElementById(modalId).classList.remove('hidden'); 
-}
-
-
-function closeAllModals() { 
-    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); 
-}
-
-document.querySelectorAll('.modal-overlay').forEach(modal => {
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeAllModals();
-        }
-    });
-});
 
 
 function openSubTab(evt, tabId) {
 
     const parentPage = evt.target.closest('.page');
-    
+
     parentPage.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
     parentPage.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
     parentPage.querySelector(`#${tabId}`).classList.add('active');

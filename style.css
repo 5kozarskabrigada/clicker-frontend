@@ -322,15 +322,15 @@ body {
 
 .bottom-nav {
     position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 4.375rem;
-        background: #181818;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        padding-bottom: env(safe-area-inset-bottom);
-        border-top: 1px solid var(--border-color);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4.375rem;
+    background: #181818;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--border-color);
 }
 
 .nav-btn {
@@ -667,6 +667,3 @@ input[type="number"]:focus {
     display: block;
 }
 
-.bottom-nav {
-    grid-template-columns: repeat(5, 1fr);
-}
