@@ -16,12 +16,9 @@
     <div id="loading-overlay" class="active">
         <div id="loading-text">Loading...</div>
     </div>
-
     <div id="app">
         <div class="app-content">
             <div id="page-container">
-
-
                 <section id="main" class="page active">
                     <div class="main-header">
                         <h2>Coin Clicker</h2>
@@ -31,22 +28,23 @@
                         <span id="coins" class="total-coins-value">0</span>
                     </div>
                     <div class="stats-grid">
-                        <div class="stat-item"><span class="stat-label">per click</span><span id="coinsPerClick"
-                                class="stat-value">0</span></div>
-                        <div class="stat-item"><span class="stat-label">per second</span><span id="coinsPerSec"
-                                class="stat-value">0</span></div>
-                        <div class="stat-item full-width"><span class="stat-label">offline bonus / hr</span><span
-                                id="offlineRate" class="stat-value">0</span></div>
-                    </div>
-
-                    <div class="main-actions">
-                        <button id="goto-images-btn" class="main-action-btn">🎨 Images</button>
+                        <div class="stat-item">
+                            <span class="stat-label">per click</span>
+                            <span id="coinsPerClick" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">per second</span>
+                            <span id="coinsPerSec" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item full-width">
+                            <span class="stat-label">offline bonus / hr</span>
+                            <span id="offlineRate" class="stat-value">0</span>
+                        </div>
                     </div>
                     <div class="clicker-zone">
                         <div id="clickImage" class="click-image"></div>
                     </div>
                 </section>
-
 
                 <section id="upgrade" class="page">
                     <h1 class="page-title">⚙️ Upgrades</h1>
@@ -58,78 +56,331 @@
                         <button class="upgrade-tab-link"
                             onclick="openUpgradeTab(event, 'offlineUpgrades')">Offline</button>
                     </div>
-                    <div id="clickUpgrades" class="upgrade-tab-content active"></div>
-                    <div id="autoUpgrades" class="upgrade-tab-content"></div>
-                    <div id="offlineUpgrades" class="upgrade-tab-content"></div>
-                </section>
-
-
-                <section id="tasks" class="page">
-                    <h1 class="page-title">🎯 Progress</h1>
-                    <div class="sub-nav">
-                        <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active
-                            Tasks</button>
-                        <button class="sub-tab-link"
-                            onclick="openSubTab(event, 'achievements-content')">Completed</button>
+            
+                <div id="clickUpgrades" class="upgrade-tab-content active">
+            
+                <div class="upgrade-item" id="upgrade_click_tier_1">
+                    <div class="upgrade-icon">I</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 1</h3>
+                        <p>+0.0000000001 per click</p>
+                        <p>Level: <span id="click_tier_1_level">0</span></p>
                     </div>
-                    <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
-                    <div id="achievements-content" class="sub-tab-content achievements-list"></div>
-                </section>
-
-
-                <section id="images" class="page">
-                    <h1 class="page-title">🎨 Coin Images</h1>
-                    <div id="imagesContainer" class="skins-grid"></div>
-                </section>
-
-
-                <section id="top" class="page">
-                    <h1 class="page-title">🏆 Top Players</h1>
-                    <div class="top-nav">
-                        <button class="top-tab-link active" onclick="openTopTab(event, 'coins')">Total Coins</button>
-                        <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_click')">Per Click</button>
-                        <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_sec')">Per Second</button>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_1_cost">0</span></span></button>
                     </div>
-                    <ol id="topList" class="leaderboard-list"></ol>
-                </section>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_2">
+                    <div class="upgrade-icon">V</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 5</h3>
+                        <p>+0.00000001 per click</p>
+                        <p>Level: <span id="click_tier_2_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_2_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_3">
+                    <div class="upgrade-icon">X</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 10</h3>
+                        <p>+0.000001 per click</p>
+                        <p>Level: <span id="click_tier_3_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_3_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_4">
+                    <div class="upgrade-icon">L</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 50</h3>
+                        <p>+0.0001 per click</p>
+                        <p>Level: <span id="click_tier_4_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_4_cost">0</span></span></button>
+                    </div>
+                </div>
+                
+                <div class="upgrade-item" id="upgrade_click_tier_5">
+                    <div class="upgrade-icon">C</div>
+                    <div class="upgrade-details">
+                        <h3>lvl 100</h3>
+                        <p>+0.01 per click</p>
+                        <p>Level: <span id="click_tier_5_level">0</span></p>
+                    </div>
+                    <div class="upgrade-action">
+                        <button class="action-button"><span class="cost">Cost: <span id="click_tier_5_cost">0</span></span></button>
+                    </div>
+                </div>
+                </div>
+                
 
-
-                <section id="transfer" class="page">
-                    <h1 class="page-title">💸 Transfer</h1>
-                    <div class="transfer-form">
-                        <div class="input-group"><label for="transferUsername">Recipient's Username</label><input
-                                id="transferUsername" type="text" placeholder="@username"></div>
-                        <div class="input-group"><label for="transferAmount">Amount to Send</label><input
-                                id="transferAmount" type="number" placeholder="0.000000000" min="0" step="0.000000001">
+                <div id="autoUpgrades" class="upgrade-tab-content">
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_1">
+                        <div class="upgrade-icon">I</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 1</h3>
+                            <p>+0.0000000005 per second</p>
+                            <p>Level: <span id="auto_tier_1_level">0</span></p>
                         </div>
-                        <button id="transferBtn" class="action-button">Send Coins</button>
-                        <p id="transferMessage" class="transfer-message"></p>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_1_cost">0</span></span></button>
+                        </div>
                     </div>
-                    <h2 class="section-subtitle">Transaction History</h2>
-                    <div class="history-controls"><input type="text" id="history-search"
-                            placeholder="Filter by username..."></div>
-                    <ul id="history-list" class="history-list"></ul>
-                </section>
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_2">
+                        <div class="upgrade-icon">V</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 5</h3>
+                            <p>+0.00000005 per second</p>
+                            <p>Level: <span id="auto_tier_2_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_2_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_3">
+                        <div class="upgrade-icon">X</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 10</h3>
+                            <p>+0.000005 per second</p>
+                            <p>Level: <span id="auto_tier_3_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_3_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_4">
+                        <div class="upgrade-icon">L</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 50</h3>
+                            <p>+0.0005 per second</p>
+                            <p>Level: <span id="auto_tier_4_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span id="auto_tier_4_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_auto_tier_5">
+                        <div class="upgrade-icon">C</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 100</h3>
+                            <p>+0.05 per second</p>
+                            <p>Level: <span id="auto_tier_5_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button id="upgrade_auto_5" class="action-button">
+                                <span class="cost">Cost: <span id="auto_tier_5_cost">0</span></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="offlineUpgrades" class="upgrade-tab-content">
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_1">
+                        <div class="upgrade-icon">I</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 1</h3>
+                            <p>+0.00000005 / hour</p>
+                            <p>Level: <span id="offline_tier_1_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_1_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_2">
+                        <div class="upgrade-icon">V</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 5</h3>
+                            <p>+0.000001 / hour</p>
+                            <p>Level: <span id="offline_tier_2_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_2_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_3">
+                        <div class="upgrade-icon">X</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 10</h3>
+                            <p>+0.00005 / hour</p>
+                            <p>Level: <span id="offline_tier_3_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_3_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_4">
+                        <div class="upgrade-icon">L</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 50</h3>
+                            <p>+0.001 / hour</p>
+                            <p>Level: <span id="offline_tier_4_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_4_cost">0</span></span></button>
+                        </div>
+                    </div>
+                
+                    <div class="upgrade-item" id="upgrade_offline_tier_5">
+                        <div class="upgrade-icon">C C</div>
+                        <div class="upgrade-details">
+                            <h3>lvl 100</h3>
+                            <p>+0.05 / hour</p>
+                            <p>Level: <span id="offline_tier_5_level">0</span></p>
+                        </div>
+                        <div class="upgrade-action">
+                            <button class="action-button"><span class="cost">Cost: <span
+                                        id="offline_tier_5_cost">0</span></span></button>
+                        </div>
+                    </div>
+                </div>
+                
+            </section>
+
+            <section id="tasks" class="page">
+                <h1 class="page-title">🎯 Progress</h1>
+                <div class="sub-nav">
+                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active Tasks</button>
+                    <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
+                </div>
+                <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
+                <div id="achievements-content" class="sub-tab-content achievements-list"></div>
+            </section>
+            
+
+            <section id="images" class="page">
+                <h1 class="page-title">🎨 Coin Images</h1>
+                <div id="imagesContainer" class="skins-grid"></div>
+            </section>
+
+
+            <section id="top" class="page">
+                <h1 class="page-title">🏆 Top Players</h1>
+
+
+                <div class="top-nav">
+                    <button class="top-tab-link active" onclick="openTopTab(event, 'coins')">Total Coins</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_click')">Per Click</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_sec')">Per Second</button>
+                    <button class="top-tab-link" onclick="openTopTab(event, 'offline_coins_per_hour')">Offline</button>
+                </div>
+
+                <ol id="topList" class="leaderboard-list"></ol>
+            </section>
+
+
+            <section id="transfer" class="page">
+                <h1 class="page-title">Transfer coins</h1>
+                <div class="transfer-form">
+                    <div class="input-group">
+                        <label for="transferUsername">Recipient's Username</label>
+                        <input id="transferUsername" type="text" placeholder="@username" />
+                    </div>
+                    <div class="input-group">
+                        <label for="transferAmount">Amount to Send</label>
+                        <input id="transferAmount" type="number" placeholder="0.000000000" min="0" step="0.000000001" />
+                    </div>
+                    <button id="transferBtn" class="action-button">Send Coins</button>
+                    <p id="transferMessage" class="transfer-message"></p>
+                </div>
+            
+                <h2 class="section-subtitle">Transaction History</h2>
+                <div class="history-controls">
+                    <input type="text" id="history-search" placeholder="Filter by username...">
+                </div>
+                <ul id="history-list" class="history-list"></ul>
+            </section>
+
+        </div>
+    </div>
+
+
+    <nav class="bottom-nav">
+        
+        <button id="nav-upgrade" class="nav-btn">
+            <span class="nav-icon">⚡️</span>
+            <span class="nav-text">Upgrades</span>
+        </button>
+
+        <button id="nav-tasks" class="nav-btn">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-text">Tasks</span>
+        </button>
+
+        <button id="nav-tasks" class="nav-btn">
+            <span class="nav-icon"></span>
+            <span class="nav-text">Images</span>
+        </button>
+
+        <button id="nav-main" class="nav-btn active">
+            <span class="nav-icon">🖱️</span>
+            <span class="nav-text">Click</span>
+        </button>
+
+        <button id="nav-top" class="nav-btn">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-text">Top</span>
+        </button>
+
+        <button id="nav-transfer" class="nav-btn">
+            <span class="nav-icon">💸</span>
+            <span class="nav-text">Transfer</span>
+        </button>
+
+    </nav>
+
+    <div id="achievements-modal" class="modal-overlay hidden" onclick="closeAllModals()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Tasks & Achievements</h2>
+                <button class="close-btn" onclick="closeAllModals()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="sub-nav">
+                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active Tasks</button>
+                    <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
+                </div>
+                <div id="tasks-content" class="sub-tab-content active"></div>
+                <div id="achievements-content" class="sub-tab-content"></div>
             </div>
         </div>
+    </div>
+    
 
+    <div id="history-modal" class="modal-overlay hidden" onclick="closeAllModals()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Transaction History</h2>
+                <button class="close-btn" onclick="closeAllModals()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="history-list-container"></div>
+            </div>
+        </div>
+    </div>
 
-        <nav class="bottom-nav">
-            <button id="nav-upgrade" class="nav-btn"><span class="nav-icon">⚡️</span><span
-                    class="nav-text">Upgrades</span></button>
-            <button id="nav-tasks" class="nav-btn"><span class="nav-icon">🎯</span><span
-                    class="nav-text">Tasks</span></button>
-            <button id="nav-main" class="nav-btn active"><span class="nav-icon">🖱️</span><span
-                    class="nav-text">Click</span></button>
-            <button id="nav-top" class="nav-btn"><span class="nav-icon">🏆</span><span
-                    class="nav-text">Top</span></button>
-            <button id="nav-transfer" class="nav-btn"><span class="nav-icon">💸</span><span
-                    class="nav-text">Wallet</span></button>
-        </nav>
-
-        <div id="notificationContainer"></div>
+    <div id="notificationContainer"></div>
     </div>
     <script src="script.js"></script>
-</body>
-
-</html>
+    </body>
+    
+    </html>

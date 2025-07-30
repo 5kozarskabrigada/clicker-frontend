@@ -40,19 +40,22 @@ const offlineBaseCost = 0.000001;
 
 
 const upgrades = {
+    // Per Click Upgrades
     'click_tier_1': { base_cost: clickBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'click_tier_2': { base_cost: clickBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'click_tier_3': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'click_tier_4': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'click_tier_5': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
 
+    // Per Second Upgrades
     'auto_tier_1': { base_cost: autoBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'auto_tier_2': { base_cost: autoBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'auto_tier_3': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'auto_tier_4': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
     'auto_tier_5': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
 
-    'offline_tier_1': { base_cost: offlineBaseCost, cost_mult: 1.20 },
+    // Offline Upgrades
+    'offline_tier_1': { base_cost: offlineBaseCost, cost_mult: 1.20 }, // Keeping original higher multiplier for offline
     'offline_tier_2': { base_cost: offlineBaseCost * TIER_COST_MULTIPLIER, cost_mult: 1.20 },
     'offline_tier_3': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: 1.20 },
     'offline_tier_4': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: 1.20 },
@@ -63,19 +66,21 @@ const upgrades = {
 const pages = {
     main: document.getElementById('main'),
     upgrade: document.getElementById('upgrade'),
-    tasks: document.getElementById('tasks'),
     images: document.getElementById('images'),
+    achievements: document.getElementById('achievements'),
     top: document.getElementById('top'),
     transfer: document.getElementById('transfer'),
+    history: document.getElementById('history')
 };
 
 const navButtons = {
     main: document.getElementById('nav-main'),
     upgrade: document.getElementById('nav-upgrade'),
-    tasks: document.getElementById('nav-tasks'), 
     images: document.getElementById('nav-images'),
+    achievements: document.getElementById('nav-achievements'),
     top: document.getElementById('nav-top'),
     transfer: document.getElementById('nav-transfer'),
+    history: document.getElementById('nav-history')
 };
 
 const offlineRateEl = document.getElementById('offlineRate');
@@ -83,18 +88,17 @@ const offlineRateEl = document.getElementById('offlineRate');
 function showPage(pageId) {
     if (!pages[pageId] || !navButtons[pageId]) return;
 
-    Object.values(pages).forEach(p => p.classList.remove('active'));
-    Object.values(navButtons).forEach(b => b.classList.remove('active'));
+    Object.values(pages).forEach(p => p && p.classList.remove('active'));
+    Object.values(navButtons).forEach(b => b && b.classList.remove('active'));
 
     pages[pageId].classList.add('active');
     navButtons[pageId].classList.add('active');
 
-  
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
-        case 'tasks': loadAchievements(); break;
-        case 'transfer': loadHistory(); break; 
+        case 'achievements': loadAchievements(); break;
+        case 'history': loadHistory(); break;
     }
 }
 
@@ -164,33 +168,60 @@ function calculateCost(base, multiplier, level) {
     return Math.floor(base * Math.pow(multiplier, level));
 }
 
-function formatCoins(amount) {
-    if (typeof amount !== 'number') return '0.000000000';
-    return amount.toFixed(9);
-}
+
+// function updateUI() {
+//     if (!userData) return;
+
+//     coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
+//     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
+//     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
+//     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(10) + ' / hr';
+
+//     for (const id in upgrades) {
+//         const level = userData[`${id}_level`] || 0;
+//         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+//         const levelEl = document.getElementById(`${id}_level`);
+//         const costEl = document.getElementById(`${id}_cost`);
+//         const button = document.querySelector(`#upgrade_${id} .action-button`);
+//         if (levelEl) levelEl.textContent = level;
+//         if (costEl) costEl.textContent = cost.toLocaleString();
+//         if (button) button.disabled = userData.coins < cost;
+//     }
+
+//     clickImage.onclick = (event) => {
+//         if (!userData) return;
+//         tg.HapticFeedback.impactOccurred('light');
+//         userData.coins += userData.coins_per_click;
+
+//         coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
+
+//         showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
+//         apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
+//     };
+// }
 
 
 function updateUI() {
     if (!userData) return;
-
-    coinsEl.textContent = formatCoins(userData.coins);
-    coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
-    coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
-    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
+    const D_PRECISION = 16;
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(D_PRECISION);
+    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(D_PRECISION);
+    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(D_PRECISION);
+    if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(12) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
-        const cost = upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level);
-
+        const cost = Math.floor(upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level));
         const levelEl = document.getElementById(`${id}_level`);
         const costEl = document.getElementById(`${id}_cost`);
         const button = document.querySelector(`#upgrade_${id} .action-button`);
-
         if (levelEl) levelEl.textContent = level;
-        if (costEl) costEl.textContent = formatCoins(cost);
+        if (costEl) costEl.textContent = cost.toLocaleString();
         if (button) button.disabled = userData.coins < cost;
     }
 }
+
 
 async function purchaseUpgrade(upgradeId) {
     try {
@@ -198,10 +229,8 @@ async function purchaseUpgrade(upgradeId) {
         userData = updatedUser;
         updateUI();
         showNotification('Upgrade successful!', 'success');
-        tg.HapticFeedback.notificationOccurred('success');
     } catch (e) {
         showNotification(e.message, 'error');
-        tg.HapticFeedback.notificationOccurred('error');
     }
 }
 
@@ -222,26 +251,29 @@ async function syncClicksToServer() {
 
     isSyncing = true;
     const clicksToSync = pendingClicks;
-    pendingClicks = 0; 
 
     try {
-        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSync });
-        if (updatedUser) {
-            userData = updatedUser;
-            updateUI();
+        let lastResponse = null;
+        for (let i = 0; i < clicksToSync; i++) {
+            lastResponse = await apiRequest('/click', 'POST');
         }
-    } 
-    
-    catch (err) {
-        console.error("Failed to sync clicks with server:", err);
-        pendingClicks += clicksToSync; 
-    } 
-    
-    finally {
-        isSyncing = false;
 
+        if (lastResponse) {
+            userData = lastResponse;
+        }
+        pendingClicks -= clicksToSync;
+
+    } catch (err) {
+        console.error("Failed to sync clicks with server:", err);
+    } finally {
+        isSyncing = false;
         if (pendingClicks > 0) {
-            setTimeout(syncClicksToServer, 100);
+            setTimeout(syncClicksToServer, 100); 
+        } else {
+
+            const latestUserData = await apiRequest('/user');
+            userData = latestUserData.user;
+            updateUI();
         }
     }
 }
@@ -313,30 +345,30 @@ function openTopTab(evt, sortBy) {
     loadTopPlayers(sortBy);
 }
 
-// async function loadTopPlayers(sortBy = 'coins') {
-//     try {
-//         const topListEl = document.getElementById('topList');
-//         topListEl.innerHTML = '<li>Loading...</li>';
-//         const players = await apiRequest(`/top?sortBy=${sortBy}`);
+async function loadTopPlayers(sortBy = 'coins') {
+    try {
+        const topListEl = document.getElementById('topList');
+        topListEl.innerHTML = '<li>Loading...</li>';
+        const players = await apiRequest(`/top?sortBy=${sortBy}`);
 
-//         const formatValue = (value) => {
-//             return parseFloat(value).toFixed(16);
-//         };
+        const formatValue = (value) => {
+            return parseFloat(value).toFixed(16);
+        };
 
-//         topListEl.innerHTML = '';
-//         players.forEach((player, idx) => {
-//             const li = document.createElement('li');
-//             li.innerHTML = `
-//                 <span class="rank">${idx + 1}.</span>
-//                 <span class="name">@${player.username || 'anonymous'}</span>
-//                 <span class="value">${formatValue(player[sortBy])}</span>
-//             `;
-//             topListEl.appendChild(li);
-//         });
-//     } catch (e) {
-//         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
-//     }
-// }
+        topListEl.innerHTML = '';
+        players.forEach((player, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="rank">${idx + 1}.</span>
+                <span class="name">@${player.username || 'anonymous'}</span>
+                <span class="value">${formatValue(player[sortBy])}</span>
+            `;
+            topListEl.appendChild(li);
+        });
+    } catch (e) {
+        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
+    }
+}
 
 // function startPassiveIncome() {
 //     setInterval(() => {
@@ -348,44 +380,19 @@ function openTopTab(evt, sortBy) {
 //     }, 1000);
 // }
 
-
-async function loadTopPlayers(sortBy = 'coins') {
-    try {
-        const topListEl = document.getElementById('topList');
-        topListEl.innerHTML = '<li>Loading...</li>';
-        const players = await apiRequest(`/top?sortBy=${sortBy}`);
-
-        topListEl.innerHTML = '';
-        players.forEach((player, idx) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span class="rank">${idx + 1}.</span>
-                <span class="name">@${player.username || 'anonymous'}</span>
-                <span class="value">${formatCoins(player[sortBy])}</span>
-            `;
-            topListEl.appendChild(li);
-        });
-    } catch (e) {
-        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
-    }
-}
-
-
 function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
-
             userData.coins += userData.coins_per_sec;
-            updateUI();
+            updateUI(); 
         }
     }, 1000);
 }
 
 
-
 async function loadImages() {
     const container = document.getElementById('imagesContainer');
-    container.innerHTML = ''; 
+    container.innerHTML = ''; // Clear old content
 
     gameData.images.forEach(image => {
         const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
@@ -440,30 +447,13 @@ async function selectImage(imageId) {
     } catch (e) {}
 }
 
-// function loadHistory() {
-//     const searchInput = document.getElementById('history-search');
-
-//     apiRequest('/transfers').then(data => {
-//         transactionHistory = data;
-//         renderHistory(); 
-//     });
-
-//     searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
-// }
-
-
-async function loadHistory() {
-    const list = document.getElementById('history-list');
+function loadHistory() {
     const searchInput = document.getElementById('history-search');
-    list.innerHTML = '<li>Loading...</li>';
 
-    try {
-        const data = await apiRequest('/transfers');
+    apiRequest('/transfers').then(data => {
         transactionHistory = data;
-        renderHistory();
-    } catch (e) {
-        list.innerHTML = '<li class="error">Failed to load transaction history.</li>';
-    }
+        renderHistory(); 
+    });
 
     searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
 }
@@ -477,11 +467,6 @@ function renderHistory(filter = '') {
         (tx.to?.username || '').toLowerCase().includes(filter)
     );
 
-    if (filtered.length === 0) {
-        list.innerHTML = '<li>No transactions found.</li>';
-        return;
-    }
-
     filtered.forEach(tx => {
         const item = document.createElement('li');
         item.className = 'history-item';
@@ -494,45 +479,16 @@ function renderHistory(filter = '') {
 
         item.innerHTML = `
             <div class="history-details">
-                <p>${direction} <b>@${otherUser || 'anonymous'}</b></p>
+                <p>${direction} <b>@${otherUser}</b></p>
                 <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
             </div>
             <div class="history-amount ${amountClass}">
-                ${sign}${formatCoins(parseFloat(tx.amount))}
+                ${sign}${parseFloat(tx.amount).toFixed(10)}
             </div>
         `;
         list.appendChild(item);
     });
 }
-
-
-// function loadAchievements() {
-//     const tasksContainer = document.getElementById('tasks-content');
-//     const achievementsContainer = document.getElementById('achievements-content');
-//     tasksContainer.innerHTML = '';
-//     achievementsContainer.innerHTML = '';
-
-//     gameData.tasks.forEach(task => {
-//         const isCompleted = userProgress.completed_task_ids.includes(task.id);
-//         const cardHtml = `
-//             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
-//                 <div class="achievement-icon">🏆</div>
-//                 <div class="achievement-content">
-//                     <h3>${task.name}</h3>
-//                     <p>${task.description}</p>
-//                 </div>
-//             </div>`;
-
-//         if (isCompleted) {
-//             achievementsContainer.innerHTML += cardHtml;
-//         } else {
-//             tasksContainer.innerHTML += cardHtml;
-//         }
-//     });
-
-//     if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
-//     if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
-// }
 
 function loadAchievements() {
     const tasksContainer = document.getElementById('tasks-content');
@@ -540,49 +496,26 @@ function loadAchievements() {
     tasksContainer.innerHTML = '';
     achievementsContainer.innerHTML = '';
 
-    if (!gameData.tasks || gameData.tasks.length === 0) {
-        tasksContainer.innerHTML = '<p class="empty-state">No tasks available.</p>';
-        achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
-        return;
-    }
-
-    let activeTasksFound = false;
-    let completedAchievementsFound = false;
-
     gameData.tasks.forEach(task => {
-        const isCompleted = userProgress.completed_task_ids && userProgress.completed_task_ids.includes(task.id);
-
-        let progressHtml = '';
-        
-        if (!isCompleted && task.task_type.startsWith('total_')) {
-            const currentProgress = userData[task.task_type] || 0;
-            const percentage = Math.min(100, (currentProgress / task.threshold) * 100);
-            progressHtml = `<div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>`;
-        }
-
+        const isCompleted = userProgress.completed_task_ids.includes(task.id);
         const cardHtml = `
             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
-                <div class="achievement-icon">
-                    ${isCompleted ? '✅' : '🎯'}
-                </div>
+                <div class="achievement-icon">🏆</div>
                 <div class="achievement-content">
                     <h3>${task.name}</h3>
                     <p>${task.description}</p>
-                    ${progressHtml}
                 </div>
             </div>`;
 
         if (isCompleted) {
             achievementsContainer.innerHTML += cardHtml;
-            completedAchievementsFound = true;
         } else {
             tasksContainer.innerHTML += cardHtml;
-            activeTasksFound = true;
         }
     });
 
-    if (!activeTasksFound) tasksContainer.innerHTML = '<p class="empty-state">No active tasks remaining!</p>';
-    if (!completedAchievementsFound) achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
+    if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
+    if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
 }
 
 function showNotification(message, type = 'info') {
@@ -614,7 +547,92 @@ function showFloatingCoin(x, y, amount) {
 }
 
 
+// async function init() {
+//     try {
+       
+//         const initialUserData = await apiRequest('/user');
+//         userData = initialUserData;
+//         updateUI();
 
+//         let lastServerCoins = userData.coins;
+//         let lastSyncTime = Date.now();
+//         let visualCoinUpdater;
+
+//         const startVisualUpdates = () => {
+//             if (visualCoinUpdater) clearInterval(visualCoinUpdater);
+
+//             visualCoinUpdater = setInterval(() => {
+//                 if (userData && userData.coins_per_sec > 0) {
+//                     const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+//                     const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
+//                     coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
+//                 }
+//             }, 1000);
+//         };
+
+//         const syncWithServer = async () => {
+//             if (isLoading) return;
+
+//             try {
+//                 const latestUserData = await apiRequest('/user');
+//                 userData = latestUserData; 
+
+
+//                 const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
+//                 const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
+//                 const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
+//                 const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
+
+
+//                 if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
+//                     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
+//                 }
+
+
+//                 updateUI();
+
+
+//                 lastServerCoins = userData.coins;
+//                 lastSyncTime = Date.now();
+
+//             } catch (error) {
+//                 console.warn("Periodic sync failed:", error.message);
+//             }
+//         };
+
+//         startVisualUpdates();
+//         setInterval(syncWithServer, 15000);
+
+//     } catch (e) {
+//         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
+//     }
+// }
+
+
+// async function init() {
+//     const loadingOverlay = document.getElementById('loading-overlay');
+//     const loadingText = document.getElementById('loading-text');
+//     if (!loadingOverlay) { console.error("Loading overlay not found!"); return; }
+
+//     try {
+//         const bonusData = await apiRequest('/claim-bonus', 'POST');
+//         if (bonusData && bonusData.earned_coins > 0) {
+//             showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(10)} coins.`, 'success');
+//         }
+
+//         const initialUserData = await apiRequest('/user');
+//         if (!initialUserData) throw new Error("Received empty user data from server.");
+
+//         userData = initialUserData;
+//         updateUI();
+//         loadingOverlay.classList.remove('active');
+//         startPassiveIncome();
+
+//     } catch (e) {
+//         loadingText.innerHTML = `Connection Error<br/><small>Please restart the app inside Telegram.</small>`;
+//         console.error("Initialization failed:", e);
+//     }
+// }
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -626,7 +644,6 @@ async function init() {
             apiRequest('/user-tasks')
         ]);
 
-
         userData = userDataResponse.user;
         gameData = gameDataResponse;
         userProgress = userProgressResponse;
@@ -634,27 +651,16 @@ async function init() {
 
         const earnings = userDataResponse.earnings;
         if (earnings && earnings.earned_passive > 0) {
-            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins.`, 'success');
+            showNotification(`Welcome back! You earned ${earnings.earned_passive.toFixed(16)} coins.`, 'success');
         }
 
         updateUI();
-        const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-        if (equippedImage) {
-            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
-        }
-
-
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
     } catch (e) {
-        // ADD THIS LINE to see the specific error in the developer console
-        console.error('Initialization failed:', e);
-
-        // This is the code that is currently running and causing the error screen
         document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
     }
 }
-
 
 
 function openModal(modalId) 
@@ -662,27 +668,17 @@ function openModal(modalId)
     document.getElementById(modalId).classList.remove('hidden'); 
 }
 
-
 function closeAllModals() { 
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); 
 }
 
-document.querySelectorAll('.modal-overlay').forEach(modal => {
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeAllModals();
-        }
-    });
-});
-
-
 function openSubTab(evt, tabId) {
+    const modal = evt.target.closest('.modal-content');
 
-    const parentPage = evt.target.closest('.page');
-    parentPage.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
-    parentPage.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
-    parentPage.querySelector(`#${tabId}`).classList.add('active');
-    
+    modal.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+    modal.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
+    modal.querySelector(`#${tabId}`).classList.add('active');
+
     evt.target.classList.add('active');
 }
 
