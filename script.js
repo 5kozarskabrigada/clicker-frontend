@@ -90,23 +90,21 @@ const navButtons = {
 const offlineRateEl = document.getElementById('offlineRate');
 
 function showPage(pageId) {
-    if (!pages[pageId] || !navButtons[pageId]) return;
+    if (!pages[pageId]) return;
 
     Object.values(pages).forEach(p => p.classList.remove('active'));
-    Object.values(navButtons).forEach(b => b.classList.remove('active'));
-
     pages[pageId].classList.add('active');
 
+    Object.values(navButtons).forEach(b => b.classList.remove('active'));
     if (navButtons[pageId]) {
         navButtons[pageId].classList.add('active');
     }
 
-  
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
         case 'tasks': loadAchievements(); break;
-        case 'transfer': loadHistory(); break; 
+        case 'transfer': loadHistory(); break;
     }
 }
 
