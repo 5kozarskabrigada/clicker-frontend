@@ -62,7 +62,7 @@ const upgrades = {
     offline: [
         { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
         { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
-        { id: 'offline_tier_4', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'offline_tier_3', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
         { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
         { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ]
@@ -81,8 +81,7 @@ const pages = {
 const navButtons = {
     main: document.getElementById('nav-main'),
     upgrade: document.getElementById('nav-upgrade'),
-    tasks: document.getElementById('nav-tasks'), 
-    images: document.getElementById('nav-images'),
+    tasks: document.getElementById('nav-tasks'),
     top: document.getElementById('nav-top'),
     transfer: document.getElementById('nav-transfer'),
 };

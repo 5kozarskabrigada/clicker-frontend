@@ -16,62 +16,70 @@
     <div id="loading-overlay" class="active">
         <div id="loading-text">Loading...</div>
     </div>
+    
     <div id="app">
+
         <div class="app-content">
-            <div id="page-container">
+            <section id="main" class="page active">
+                <div class="main-header">
+                    <h2>Coin Clicker</h2>
+                </div>
 
-                <section id="main" class="page active">
-                    <div class="main-header">
-                        <h2>Coin Clicker</h2>
-                    </div>
-                    <div class="total-coins-container">
-                        <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
-                        <span id="coins" class="total-coins-value">0.000000000</span>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat-item"><span class="stat-label">per click</span><span id="coinsPerClick"
-                                class="stat-value">0</span></div>
-                        <div class="stat-item"><span class="stat-label">per second</span><span id="coinsPerSec"
-                                class="stat-value">0</span></div>
-                        <div class="stat-item full-width"><span class="stat-label">offline bonus / hr</span><span id="offlineRate"
-                                class="stat-value">0</span></div>
+                <div class="total-coins-container">
+                    <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
+                    <span id="coins" class="total-coins-value">0.000000000</span>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">per click</span>
+                        <span id="coinsPerClick" class="stat-value">0</span>
                     </div>
 
-                    <div class="main-actions">
-                        <button id="goto-images-btn" class="main-action-btn">🎨 Images</button>
+                    <div class="stat-item">
+                        <span class="stat-label">per second</span>
+                        <span id="coinsPerSec" class="stat-value">0</span>
                     </div>
 
-                    <div class="clicker-zone">
-                        <div id="clickImage" class="click-image"></div>
+                    <div class="stat-item full-width"><span class="stat-label">offline bonus / hr</span>
+                        <span id="offlineRate" class="stat-value">0</span>
                     </div>
-                </section>
+                </div>
+
+                <div class="main-actions">
+                    <button id="goto-images-btn" class="main-action-btn">🎨 Images</button>
+                </div>
+                <div class="clicker-zone">
+                    <div id="clickImage" class="click-image"></div>
+                </div>
+            </section>
 
 
             <section id="upgrade" class="page">
-
                 <h1 class="page-title">⚙️ Upgrades</h1>
                 <div class="upgrade-nav">
-                    <button class="upgrade-tab-link active" onclick="openUpgradeTab(event, 'clickUpgrades')">Per Click</button>
+                    <button class="upgrade-tab-link active" onclick="openUpgradeTab(event, 'clickUpgrades')">Per
+                        Click</button>
                     <button class="upgrade-tab-link" onclick="openUpgradeTab(event, 'autoUpgrades')">Per Second</button>
                     <button class="upgrade-tab-link" onclick="openUpgradeTab(event, 'offlineUpgrades')">Offline</button>
                 </div>
-
                 <div id="clickUpgrades" class="upgrade-tab-content active"></div>
                 <div id="autoUpgrades" class="upgrade-tab-content"></div>
                 <div id="offlineUpgrades" class="upgrade-tab-content"></div>
-
             </section>
+
 
             <section id="tasks" class="page">
                 <h1 class="page-title">🎯 Progress</h1>
                 <div class="sub-nav">
-                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active Tasks</button>
+                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active
+                        Tasks</button>
                     <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
                 </div>
                 <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
                 <div id="achievements-content" class="sub-tab-content achievements-list"></div>
             </section>
-            
+
 
             <section id="images" class="page">
                 <h1 class="page-title">🎨 Coin Images</h1>
@@ -89,26 +97,30 @@
                 <ol id="topList" class="leaderboard-list"></ol>
             </section>
 
-
             <section id="transfer" class="page">
-                <h1 class="page-title">Transfer coins</h1>
+                <h1 class="page-title">💸 Wallet</h1>
+
                 <div class="transfer-form">
-                    <div class="input-group">
-                        <label for="transferUsername">Recipient's Username</label>
-                        <input id="transferUsername" type="text" placeholder="@username" />
+
+                    <div class="input-group"><label for="transferUsername">Recipient's Username</label>
+                        <input  id="transferUsername" type="text" placeholder="@username" />
                     </div>
-                    <div class="input-group">
-                        <label for="transferAmount">Amount to Send</label>
+
+                    <div class="input-group"><label for="transferAmount">Amount to Send</label>
                         <input id="transferAmount" type="number" placeholder="0.000000000" min="0" step="0.000000001" />
                     </div>
+
                     <button id="transferBtn" class="action-button">Send Coins</button>
+
                     <p id="transferMessage" class="transfer-message"></p>
+
                 </div>
-            
                 <h2 class="section-subtitle">Transaction History</h2>
-                <div class="history-controls">
-                    <input type="text" id="history-search" placeholder="Filter by username...">
+
+                <div class="history-controls"><input type="text" id="history-search"
+                        placeholder="Filter by username...">
                 </div>
+
                 <ul id="history-list" class="history-list"></ul>
             </section>
 
@@ -117,18 +129,34 @@
 
 
     <nav class="bottom-nav">
-        <button id="nav-upgrade" class="nav-btn"><span class="nav-icon">⚡️</span><span class="nav-text">Upgrades</span></button>
-        <button id="nav-tasks" class="nav-btn"><span class="nav-icon">🎯</span><span class="nav-text">Tasks</span></button>
-        <button id="nav-main" class="nav-btn active"><span class="nav-icon">🖱️</span><span class="nav-text">Click</span></button>
-        <button id="nav-top" class="nav-btn"><span class="nav-icon">🏆</span><span class="nav-text">Top</span></button>
-        <button id="nav-transfer" class="nav-btn"><span class="nav-icon">💸</span><span class="nav-text">Wallet</span></button>
+        
+        <button id="nav-upgrade" class="nav-btn">
+            <span class="nav-icon">⚡️</span>
+            <span class="nav-text">Upgrades</span>
+        </button>
+
+        <button id="nav-tasks" class="nav-btn">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-text">Tasks</span>
+        </button>
+
+        <button id="nav-main" class="nav-btn active">
+            <span class="nav-icon">🖱️</span>
+            <span class="nav-text">Click</span>
+        </button>
+
+        <button id="nav-top" class="nav-btn">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-text">Top</span>
+        </button>
+        <button id="nav-transfer" class="nav-btn">
+            <span class="nav-icon">💸</span>
+            <span class="nav-text">Wallet</span>
+        </button>
     </nav>
 
-  
-
     <div id="notificationContainer"></div>
-    </div>
     <script src="script.js"></script>
-    </body>
-    
-    </html>
+</body>
+
+</html>
