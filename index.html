@@ -17,10 +17,6 @@
         <div id="loading-text">Loading...</div>
     </div>
     <div id="app">
-        <div class="top-bar">
-            <button class="top-bar-btn" onclick="openModal('achievements-modal')">🏆 Tasks</button>
-            <button class="top-bar-btn" onclick="openModal('history-modal')">📜 History</button>
-        </div>
         <div class="app-content">
             <div id="page-container">
                 <section id="main" class="page active">
@@ -31,7 +27,6 @@
                         <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
                         <span id="coins" class="total-coins-value">0</span>
                     </div>
-
                     <div class="stats-grid">
                         <div class="stat-item">
                             <span class="stat-label">per click</span>
@@ -46,10 +41,8 @@
                             <span id="offlineRate" class="stat-value">0</span>
                         </div>
                     </div>
-
                     <div class="clicker-zone">
                         <div id="clickImage" class="click-image"></div>
-                        <div id="floating-text-container"></div>
                     </div>
                 </section>
 
@@ -263,6 +256,22 @@
                 
             </section>
 
+            <section id="tasks" class="page">
+                <h1 class="page-title">🎯 Progress</h1>
+                <div class="sub-nav">
+                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active Tasks</button>
+                    <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
+                </div>
+                <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
+                <div id="achievements-content" class="sub-tab-content achievements-list"></div>
+            </section>
+            
+
+            <section id="images" class="page">
+                <h1 class="page-title">🎨 Coin Images</h1>
+                <div id="imagesContainer" class="skins-grid"></div>
+            </section>
+
 
             <section id="top" class="page">
                 <h1 class="page-title">🏆 Top Players</h1>
@@ -280,37 +289,21 @@
 
 
             <section id="transfer" class="page">
-
-                <h1 class="page-title">Transfer Coins</h1>
-
+                <h1 class="page-title">Transfer coins</h1>
                 <div class="transfer-form">
                     <div class="input-group">
                         <label for="transferUsername">Recipient's Username</label>
                         <input id="transferUsername" type="text" placeholder="@username" />
                     </div>
-
                     <div class="input-group">
                         <label for="transferAmount">Amount to Send</label>
-                        <input id="transferAmount" type="number" placeholder="1000" min="1" />
+                        <input id="transferAmount" type="number" placeholder="0.000000000" min="0" step="0.000000001" />
                     </div>
-
                     <button id="transferBtn" class="action-button">Send Coins</button>
                     <p id="transferMessage" class="transfer-message"></p>
                 </div>
-            </section>
-
-            <section id="images" class="page">
-                <h1 class="page-title">🎨 Coin Images</h1>
-                <div id="imagesContainer" class="skins-grid"></div>
-            </section>
-
-            <section id="achievements" class="page">
-                <h1 class="page-title">🏆 Tasks & Achievements</h1>
-                <div id="achievementsContainer" class="achievements-list"></div>
-            </section>
-
-            <section id="history" class="page">
-                <h1 class="page-title">📜 Transaction History</h1>
+            
+                <h2 class="section-subtitle">Transaction History</h2>
                 <div class="history-controls">
                     <input type="text" id="history-search" placeholder="Filter by username...">
                 </div>
@@ -328,8 +321,13 @@
             <span class="nav-text">Upgrades</span>
         </button>
 
+        <button id="nav-tasks" class="nav-btn">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-text">Tasks</span>
+        </button>
+
         <button id="nav-images" class="nav-btn">
-            <span class="nav-icon">🎨</span>
+            <span class="nav-icon">🖼️</span>
             <span class="nav-text">Images</span>
         </button>
 

@@ -63,21 +63,19 @@ const upgrades = {
 const pages = {
     main: document.getElementById('main'),
     upgrade: document.getElementById('upgrade'),
+    tasks: document.getElementById('tasks'),
     images: document.getElementById('images'),
-    achievements: document.getElementById('achievements'),
     top: document.getElementById('top'),
     transfer: document.getElementById('transfer'),
-    history: document.getElementById('history')
 };
 
 const navButtons = {
     main: document.getElementById('nav-main'),
     upgrade: document.getElementById('nav-upgrade'),
+    tasks: document.getElementById('nav-tasks'), 
     images: document.getElementById('nav-images'),
-    achievements: document.getElementById('nav-achievements'),
     top: document.getElementById('nav-top'),
     transfer: document.getElementById('nav-transfer'),
-    history: document.getElementById('nav-history')
 };
 
 const offlineRateEl = document.getElementById('offlineRate');
@@ -85,17 +83,18 @@ const offlineRateEl = document.getElementById('offlineRate');
 function showPage(pageId) {
     if (!pages[pageId] || !navButtons[pageId]) return;
 
-    Object.values(pages).forEach(p => p && p.classList.remove('active'));
-    Object.values(navButtons).forEach(b => b && b.classList.remove('active'));
+    Object.values(pages).forEach(p => p.classList.remove('active'));
+    Object.values(navButtons).forEach(b => b.classList.remove('active'));
 
     pages[pageId].classList.add('active');
     navButtons[pageId].classList.add('active');
 
+  
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
-        case 'achievements': loadAchievements(); break;
-        case 'history': loadHistory(); break;
+        case 'tasks': loadAchievements(); break;
+        case 'transfer': loadHistory(); break; 
     }
 }
 
@@ -181,18 +180,17 @@ function updateUI() {
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
-        const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+        const cost = upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level);
 
         const levelEl = document.getElementById(`${id}_level`);
         const costEl = document.getElementById(`${id}_cost`);
         const button = document.querySelector(`#upgrade_${id} .action-button`);
 
         if (levelEl) levelEl.textContent = level;
-        if (costEl) costEl.textContent = cost.toLocaleString(undefined, { minimumFractionDigits: 9, maximumFractionDigits: 9 });
+        if (costEl) costEl.textContent = formatCoins(cost);
         if (button) button.disabled = userData.coins < cost;
     }
 }
-
 
 async function purchaseUpgrade(upgradeId) {
     try {
@@ -455,70 +453,58 @@ async function selectImage(imageId) {
 
 
 async function loadHistory() {
-    const historyListContainer = document.getElementById('history-list-container');
-    historyListContainer.innerHTML = 'Loading history...';
+    const list = document.getElementById('history-list');
+    const searchInput = document.getElementById('history-search');
+    list.innerHTML = '<li>Loading...</li>';
 
     try {
         const data = await apiRequest('/transfers');
         transactionHistory = data;
         renderHistory();
-    } catch (error) {
-        historyListContainer.innerHTML = '<p class="error">Failed to load history.</p>';
+    } catch (e) {
+        list.innerHTML = '<li class="error">Failed to load transaction history.</li>';
     }
+
+    searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
 }
 
-
-function renderHistory() {
-    const historyListContainer = document.getElementById('history-list-container');
-    historyListContainer.innerHTML = `
-        <div class="history-controls">
-            <input type="text" id="history-search" placeholder="Filter by username...">
-        </div>
-        <ul id="history-list" class="history-list"></ul>
-    `;
-
-    const searchInput = document.getElementById('history-search');
+function renderHistory(filter = '') {
     const list = document.getElementById('history-list');
+    list.innerHTML = '';
 
-    const doRender = (filter = '') => {
-        list.innerHTML = '';
+    const filtered = transactionHistory.filter(tx =>
+        (tx.from?.username || '').toLowerCase().includes(filter) ||
+        (tx.to?.username || '').toLowerCase().includes(filter)
+    );
 
-        const filtered = transactionHistory.filter(tx =>
-            (tx.from?.username || '').toLowerCase().includes(filter) ||
-            (tx.to?.username || '').toLowerCase().includes(filter)
-        );
+    if (filtered.length === 0) {
+        list.innerHTML = '<li>No transactions found.</li>';
+        return;
+    }
 
-        if (filtered.length === 0) {
-            list.innerHTML = '<li>No transactions found.</li>';
-            return;
-        }
+    filtered.forEach(tx => {
+        const item = document.createElement('li');
+        item.className = 'history-item';
 
-        filtered.forEach(tx => {
-            const item = document.createElement('li');
-            item.className = 'history-item';
+        const isSent = tx.from.username === userData.username;
+        const direction = isSent ? 'Sent to' : 'Received from';
+        const otherUser = isSent ? tx.to.username : tx.from.username;
+        const amountClass = isSent ? 'sent' : 'received';
+        const sign = isSent ? '-' : '+';
 
-            const isSent = tx.from.username === userData.username;
-            const direction = isSent ? 'Sent to' : 'Received from';
-            const otherUser = isSent ? tx.to.username : tx.from.username;
-            const amountClass = isSent ? 'sent' : 'received';
-            const sign = isSent ? '-' : '+';
-
-            item.innerHTML = `
-                <div class="history-details">
-                    <p>${direction} <b>@${otherUser || 'anonymous'}</b></p>
-                    <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
-                </div>
-                <div class="history-amount ${amountClass}">
-                    ${sign}${formatCoins(parseFloat(tx.amount))}
-                </div>
-            `;
-            list.appendChild(item);
-        });
-    };
-
-    searchInput.oninput = () => doRender(searchInput.value.toLowerCase());
-    doRender(); 
+        item.innerHTML = `
+            <div class="history-details">
+                <p>${direction} <b>@${otherUser || 'anonymous'}</b></p>
+                <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
+            </div>
+            <div class="history-amount ${amountClass}">
+                ${sign}${formatCoins(parseFloat(tx.amount))}
+            </div>
+        `;
+        list.appendChild(item);
+    });
 }
+
 
 // function loadAchievements() {
 //     const tasksContainer = document.getElementById('tasks-content');
@@ -555,31 +541,48 @@ function loadAchievements() {
     achievementsContainer.innerHTML = '';
 
     if (!gameData.tasks || gameData.tasks.length === 0) {
-        tasksContainer.innerHTML = '<p>No tasks available.</p>';
-        achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
+        tasksContainer.innerHTML = '<p class="empty-state">No tasks available.</p>';
+        achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
         return;
     }
 
+    let activeTasksFound = false;
+    let completedAchievementsFound = false;
+
     gameData.tasks.forEach(task => {
         const isCompleted = userProgress.completed_task_ids && userProgress.completed_task_ids.includes(task.id);
+
+        let progressHtml = '';
+        
+        if (!isCompleted && task.task_type.startsWith('total_')) {
+            const currentProgress = userData[task.task_type] || 0;
+            const percentage = Math.min(100, (currentProgress / task.threshold) * 100);
+            progressHtml = `<div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>`;
+        }
+
         const cardHtml = `
             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
-                <div class="achievement-icon">🏆</div>
+                <div class="achievement-icon">
+                    ${isCompleted ? '✅' : '🎯'}
+                </div>
                 <div class="achievement-content">
                     <h3>${task.name}</h3>
                     <p>${task.description}</p>
+                    ${progressHtml}
                 </div>
             </div>`;
 
         if (isCompleted) {
             achievementsContainer.innerHTML += cardHtml;
+            completedAchievementsFound = true;
         } else {
             tasksContainer.innerHTML += cardHtml;
+            activeTasksFound = true;
         }
     });
 
-    if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
-    if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
+    if (!activeTasksFound) tasksContainer.innerHTML = '<p class="empty-state">No active tasks remaining!</p>';
+    if (!completedAchievementsFound) achievementsContainer.innerHTML = '<p class="empty-state">No achievements unlocked yet.</p>';
 }
 
 function showNotification(message, type = 'info') {
@@ -669,11 +672,12 @@ document.querySelectorAll('.modal-overlay').forEach(modal => {
 
 
 function openSubTab(evt, tabId) {
-    const modal = evt.target.closest('.modal-content');
 
-    modal.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
-    modal.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
-    modal.querySelector(`#${tabId}`).classList.add('active');
+    const parentPage = evt.target.closest('.page');
+    
+    parentPage.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+    parentPage.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
+    parentPage.querySelector(`#${tabId}`).classList.add('active');
 
     evt.target.classList.add('active');
 }
