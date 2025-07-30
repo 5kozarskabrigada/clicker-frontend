@@ -122,7 +122,7 @@ async function syncClicksToServer() {
     pendingClicks = 0;
 
     try {
-        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSync });
+        const updatedUser = await apiRequest('/api/click', 'POST', { clicks: clicksToSync });
         
         if (updatedUser) {
             userData = updatedUser;
@@ -194,7 +194,7 @@ function generateUpgradeHTML() {
 
 async function purchaseUpgrade(upgradeId) {
     try {
-        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
+        const updatedUser = await apiRequest('/api/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
 
         updateUI();
@@ -505,10 +505,10 @@ async function init() {
     generateUpgradeHTML();
     try {
         const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
-            apiRequest('/user'),
-            apiRequest('/game-data'),
-            apiRequest('/user-progress'),
-            apiRequest('/user-tasks')
+            apiRequest('/api/user'),
+            apiRequest('/api/game-data'),
+            apiRequest('/api/user-progress'),
+            apiRequest('/api/user-tasks')
         ]);
 
         if (!userDataResponse || !userDataResponse.user) throw new Error("Invalid user data from server.");
