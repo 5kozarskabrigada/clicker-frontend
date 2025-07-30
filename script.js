@@ -479,40 +479,32 @@ function renderHistory(filter = '') {
     });
 }
 
-async function loadAchievements() {
-    try {
-        const { allAchievements, userAchievements } = await apiRequest('/achievements');
-        achievementsContainer.innerHTML = '';
-        allAchievements.forEach(ach => {
-            const userAch = userAchievements.find(ua => ua.achievement_id === ach.id);
+function loadAchievements() {
+    const tasksContainer = document.getElementById('tasks-content');
+    const achievementsContainer = document.getElementById('achievements-content');
+    tasksContainer.innerHTML = '';
+    achievementsContainer.innerHTML = '';
 
-            const achCard = document.createElement('div');
-            achCard.className = `achievement-card ${userAch ? 'unlocked' : 'locked'}`;
-            const achIcon = document.createElement('div');
-            achIcon.className = 'achievement-icon';
-            achIcon.textContent = userAch ? '🏆' : '🔒';
-            const achContent = document.createElement('div');
-            achContent.className = 'achievement-content';
-            const achTitle = document.createElement('h3');
-            achTitle.textContent = ach.name;
-            const achDesc = document.createElement('p');
-            achDesc.className = 'description';
-            achDesc.textContent = ach.description;
-            achContent.append(achTitle, achDesc);
+    gameData.tasks.forEach(task => {
+        const isCompleted = userProgress.completed_task_ids.includes(task.id);
+        const cardHtml = `
+            <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
+                <div class="achievement-icon">🏆</div>
+                <div class="achievement-content">
+                    <h3>${task.name}</h3>
+                    <p>${task.description}</p>
+                </div>
+            </div>`;
 
-            if (userAch) {
-                const achDate = document.createElement('p');
-                achDate.className = 'date';
-                achDate.textContent = `Unlocked: ${new Date(userAch.unlocked_at).toLocaleDateString()}`;
-                achContent.appendChild(achDate);
-            }
+        if (isCompleted) {
+            achievementsContainer.innerHTML += cardHtml;
+        } else {
+            tasksContainer.innerHTML += cardHtml;
+        }
+    });
 
-            achCard.append(achIcon, achContent);
-            achievementsContainer.appendChild(achCard);
-        });
-    } catch (e) {
-        achievementsContainer.innerHTML = '<div class="error">Failed to load achievements.</div>';
-    }
+    if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
+    if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
 }
 
 function showNotification(message, type = 'info') {
@@ -633,18 +625,20 @@ function showFloatingCoin(x, y, amount) {
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
-    const loadingText = document.getElementById('loading-text');
-
     try {
-        const response = await apiRequest('/user');
-        if (!response || !response.user) throw new Error("Invalid user data from server.");
+        const [userDataResponse, gameDataResponse, userProgressResponse, userTasksResponse] = await Promise.all([
+            apiRequest('/user'),
+            apiRequest('/game-data'),
+            apiRequest('/user-progress'),
+            apiRequest('/user-tasks')
+        ]);
 
-        userData = response.user;
-        const earnings = response.earnings;
+        userData = userDataResponse.user;
+        gameData = gameDataResponse;
+        userProgress = userProgressResponse;
+        userProgress.completed_task_ids = userTasksResponse.filter(t => t.is_completed).map(t => t.task_id);
 
-        gameData = await apiRequest('/game-data');
-        userProgress = await apiRequest('/user-progress');
-
+        const earnings = userDataResponse.earnings;
         if (earnings && earnings.earned_passive > 0) {
             showNotification(`Welcome back! You earned ${earnings.earned_passive.toFixed(16)} coins.`, 'success');
         }
@@ -652,11 +646,29 @@ async function init() {
         updateUI();
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
-
     } catch (e) {
-        loadingText.innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
-        console.error("Initialization failed:", e);
+        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
     }
+}
+
+
+function openModal(modalId) 
+{ 
+    document.getElementById(modalId).classList.remove('hidden'); 
+}
+
+function closeAllModals() { 
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); 
+}
+
+function openSubTab(evt, tabId) {
+    const modal = evt.target.closest('.modal-content');
+
+    modal.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+    modal.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
+    modal.querySelector(`#${tabId}`).classList.add('active');
+    
+    evt.target.classList.add('active');
 }
 
 function startPassiveIncome() {

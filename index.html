@@ -17,6 +17,10 @@
         <div id="loading-text">Loading...</div>
     </div>
     <div id="app">
+        <div class="top-bar">
+            <button class="top-bar-btn" onclick="openModal('achievements-modal')">🏆 Tasks</button>
+            <button class="top-bar-btn" onclick="openModal('history-modal')">📜 History</button>
+        </div>
         <div class="app-content">
             <div id="page-container">
                 <section id="main" class="page active">
@@ -319,27 +323,62 @@
 
     <nav class="bottom-nav">
         
-        <button id="nav-main" class="nav-btn active">
-            <span class="nav-icon">🖱️</span>
-            <span class="nav-text">Click</span>
-        </button>
         <button id="nav-upgrade" class="nav-btn">
             <span class="nav-icon">⚡️</span>
             <span class="nav-text">Upgrades</span>
         </button>
+
         <button id="nav-images" class="nav-btn">
             <span class="nav-icon">🎨</span>
             <span class="nav-text">Images</span>
         </button>
-        <button id="nav-achievements" class="nav-btn">
-            <span class="nav-icon">🏆</span>
-            <span class="nav-text">Tasks</span>
-            </button>
-        <button id="nav-history" class="nav-btn">
-            <span class="nav-icon">📜</span>
-            <span class="nav-text">History</span>
+
+        <button id="nav-main" class="nav-btn active">
+            <span class="nav-icon">🖱️</span>
+            <span class="nav-text">Click</span>
         </button>
+
+        <button id="nav-top" class="nav-btn">
+            <span class="nav-icon">🏆</span>
+            <span class="nav-text">Top</span>
+        </button>
+
+        <button id="nav-transfer" class="nav-btn">
+            <span class="nav-icon">💸</span>
+            <span class="nav-text">Transfer</span>
+        </button>
+
     </nav>
+
+    <div id="achievements-modal" class="modal-overlay hidden" onclick="closeAllModals()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Tasks & Achievements</h2>
+                <button class="close-btn" onclick="closeAllModals()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="sub-nav">
+                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active Tasks</button>
+                    <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
+                </div>
+                <div id="tasks-content" class="sub-tab-content active"></div>
+                <div id="achievements-content" class="sub-tab-content"></div>
+            </div>
+        </div>
+    </div>
+    
+
+    <div id="history-modal" class="modal-overlay hidden" onclick="closeAllModals()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2>Transaction History</h2>
+                <button class="close-btn" onclick="closeAllModals()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="history-list-container"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="notificationContainer"></div>
     </div>
