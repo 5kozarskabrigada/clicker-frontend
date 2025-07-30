@@ -244,14 +244,31 @@ async function handleTransfer() {
 
 
 function showPage(pageId) {
+
     if (!pages[pageId]) return;
 
     Object.values(pages).forEach(p => p.classList.remove('active'));
     pages[pageId].classList.add('active');
 
-    Object.values(navButtons).forEach(b => b.classList.remove('active'));
-    if (navButtons[pageId]) navButtons[pageId].classList.add('active');
 
+    Object.values(pages).forEach(p => {
+        if (p) p.classList.remove('active'); 
+    });
+
+    if (pages[pageId]) { 
+        pages[pageId].classList.add('active');
+    } else {
+        console.error(`showPage: Page with id "${pageId}" not found.`);
+        return; 
+    }
+
+    Object.values(navButtons).forEach(b => {
+        if (b) b.classList.remove('active'); 
+    });
+
+    if (navButtons[pageId]) { 
+        navButtons[pageId].classList.add('active');
+    }
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
