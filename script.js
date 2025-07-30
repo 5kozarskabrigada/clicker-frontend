@@ -62,7 +62,7 @@ const upgrades = {
     offline: [
         { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
         { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
-        { id: 'offline_tier_4', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'offline_tier_3', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
         { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
         { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ]
@@ -96,10 +96,7 @@ function showPage(pageId) {
     Object.values(navButtons).forEach(b => b.classList.remove('active'));
 
     pages[pageId].classList.add('active');
-
-    if (navButtons[pageId]) {
-        navButtons[pageId].classList.add('active');
-    }
+    navButtons[pageId].classList.add('active');
 
   
     switch (pageId) {
@@ -263,12 +260,10 @@ clickImage.onclick = (event) => {
 
     userData.coins += userData.coins_per_click;
     updateUI();
-    showFloatingCoin(event.clientX, event.clientY, `+${formatCoins(userData.coins_per_click)}`);
+    showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(16)}`);
 
-    apiRequest('/click', 'POST')
-        .catch(err => {
-            console.error("Click sync failed:", err);
-        });
+    pendingClicks++;
+    syncClicksToServer();
 };
 
 async function syncClicksToServer() {
@@ -672,6 +667,7 @@ function showFloatingCoin(x, y, amount) {
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
+
     generateUpgradeHTML();
 
     try {
@@ -693,7 +689,6 @@ async function init() {
         }
 
         updateUI();
-
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
         if (equippedImage) {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
@@ -706,7 +701,6 @@ async function init() {
         console.error("Initialization failed:", e);
     }
 }
-
 
 
 function openSubTab(evt, tabId) {
@@ -727,23 +721,6 @@ function startPassiveIncome() {
             updateUI();
         }
     }, 1000);
-}
-
-function setupEventListeners() {
-
-    for (const key in navButtons) {
-        if (navButtons[key]) {
-            navButtons[key].onclick = () => showPage(key);
-        }
-    }
-
-    const gotoImagesBtn = document.getElementById('goto-images-btn');
-    if (gotoImagesBtn) {
-        gotoImagesBtn.onclick = () => showPage('images');
-    }
-
-    const transferBtn = document.getElementById('transferBtn');
-    if (transferBtn) transferBtn.onclick = handleTransfer; 
 }
 
 tg.ready();
