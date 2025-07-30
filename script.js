@@ -31,24 +31,32 @@ const imagesContainer = document.getElementById('imagesContainer');
 const achievementsContainer = document.getElementById('achievementsContainer');
 const notificationContainer = document.getElementById('notificationContainer');
 
+const TIER_COST_MULTIPLIER = 16;
+const INTRA_TIER_COST_MULTIPLIER = 1.215;
+
+const clickBaseCost = 0.000000064;
+const autoBaseCost = 0.000000128; 
+const offlineBaseCost = 0.000001;
+
+
 const upgrades = {
-    'click_tier_1': { base_cost: 10, cost_mult: 1.15 },
-    'click_tier_2': { base_cost: 500, cost_mult: 1.15 },
-    'click_tier_3': { base_cost: 10000, cost_mult: 1.15 },
-    'click_tier_4': { base_cost: 250000, cost_mult: 1.15 },
-    'click_tier_5': { base_cost: 5000000, cost_mult: 1.15 },
+    'click_tier_1': { base_cost: clickBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'click_tier_2': { base_cost: clickBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'click_tier_3': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'click_tier_4': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'click_tier_5': { base_cost: clickBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
 
-    'auto_tier_1': { base_cost: 100, cost_mult: 1.15 },
-    'auto_tier_2': { base_cost: 2500, cost_mult: 1.15 },
-    'auto_tier_3': { base_cost: 50000, cost_mult: 1.15 },
-    'auto_tier_4': { base_cost: 1000000, cost_mult: 1.15 },
-    'auto_tier_5': { base_cost: 20000000, cost_mult: 1.15 },
+    'auto_tier_1': { base_cost: autoBaseCost, cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'auto_tier_2': { base_cost: autoBaseCost * TIER_COST_MULTIPLIER, cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'auto_tier_3': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'auto_tier_4': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: INTRA_TIER_COST_MULTIPLIER },
+    'auto_tier_5': { base_cost: autoBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: INTRA_TIER_COST_MULTIPLIER },
 
-    'offline_tier_1': { base_cost: 5000, cost_mult: 1.20 },
-    'offline_tier_2': { base_cost: 100000, cost_mult: 1.20 },
-    'offline_tier_3': { base_cost: 2500000, cost_mult: 1.20 },
-    'offline_tier_4': { base_cost: 50000000, cost_mult: 1.20 },
-    'offline_tier_5': { base_cost: 1000000000, cost_mult: 1.20 },
+    'offline_tier_1': { base_cost: offlineBaseCost, cost_mult: 1.20 },
+    'offline_tier_2': { base_cost: offlineBaseCost * TIER_COST_MULTIPLIER, cost_mult: 1.20 },
+    'offline_tier_3': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 2), cost_mult: 1.20 },
+    'offline_tier_4': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 3), cost_mult: 1.20 },
+    'offline_tier_5': { base_cost: offlineBaseCost * Math.pow(TIER_COST_MULTIPLIER, 4), cost_mult: 1.20 },
 };
 
 
@@ -157,56 +165,30 @@ function calculateCost(base, multiplier, level) {
     return Math.floor(base * Math.pow(multiplier, level));
 }
 
-
-// function updateUI() {
-//     if (!userData) return;
-
-//     coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
-
-//     coinsPerClickEl.textContent = userData.coins_per_click.toFixed(10);
-//     coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(10);
-//     if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(10) + ' / hr';
-
-//     for (const id in upgrades) {
-//         const level = userData[`${id}_level`] || 0;
-//         const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
-//         const levelEl = document.getElementById(`${id}_level`);
-//         const costEl = document.getElementById(`${id}_cost`);
-//         const button = document.querySelector(`#upgrade_${id} .action-button`);
-//         if (levelEl) levelEl.textContent = level;
-//         if (costEl) costEl.textContent = cost.toLocaleString();
-//         if (button) button.disabled = userData.coins < cost;
-//     }
-
-//     clickImage.onclick = (event) => {
-//         if (!userData) return;
-//         tg.HapticFeedback.impactOccurred('light');
-//         userData.coins += userData.coins_per_click;
-
-//         coinsEl.textContent = parseFloat(userData.coins).toFixed(10);
-
-//         showFloatingCoin(event.clientX, event.clientY, `+${userData.coins_per_click.toFixed(12)}`);
-//         apiRequest('/click', 'POST').then(user => { userData = user; }).catch(err => console.error(err));
-//     };
-// }
+function formatCoins(amount) {
+    if (typeof amount !== 'number') return '0.000000000';
+    return amount.toFixed(9);
+}
 
 
 function updateUI() {
     if (!userData) return;
-    const D_PRECISION = 16;
-    coinsEl.textContent = parseFloat(userData.coins).toFixed(D_PRECISION);
-    coinsPerClickEl.textContent = userData.coins_per_click.toFixed(D_PRECISION);
-    coinsPerSecEl.textContent = userData.coins_per_sec.toFixed(D_PRECISION);
-    if (offlineRateEl) offlineRateEl.textContent = userData.offline_coins_per_hour.toFixed(12) + ' / hr';
+
+    coinsEl.textContent = formatCoins(userData.coins);
+    coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
+    coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
+    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
 
     for (const id in upgrades) {
         const level = userData[`${id}_level`] || 0;
-        const cost = Math.floor(upgrades[id].base_cost * Math.pow(upgrades[id].cost_mult, level));
+        const cost = calculateCost(upgrades[id].base_cost, upgrades[id].cost_mult, level);
+
         const levelEl = document.getElementById(`${id}_level`);
         const costEl = document.getElementById(`${id}_cost`);
         const button = document.querySelector(`#upgrade_${id} .action-button`);
+
         if (levelEl) levelEl.textContent = level;
-        if (costEl) costEl.textContent = cost.toLocaleString();
+        if (costEl) costEl.textContent = cost.toLocaleString(undefined, { minimumFractionDigits: 9, maximumFractionDigits: 9 });
         if (button) button.disabled = userData.coins < cost;
     }
 }
@@ -218,8 +200,10 @@ async function purchaseUpgrade(upgradeId) {
         userData = updatedUser;
         updateUI();
         showNotification('Upgrade successful!', 'success');
+        tg.HapticFeedback.notificationOccurred('success');
     } catch (e) {
         showNotification(e.message, 'error');
+        tg.HapticFeedback.notificationOccurred('error');
     }
 }
 
@@ -240,29 +224,26 @@ async function syncClicksToServer() {
 
     isSyncing = true;
     const clicksToSync = pendingClicks;
+    pendingClicks = 0; 
 
     try {
-        let lastResponse = null;
-        for (let i = 0; i < clicksToSync; i++) {
-            lastResponse = await apiRequest('/click', 'POST');
-        }
-
-        if (lastResponse) {
-            userData = lastResponse;
-        }
-        pendingClicks -= clicksToSync;
-
-    } catch (err) {
-        console.error("Failed to sync clicks with server:", err);
-    } finally {
-        isSyncing = false;
-        if (pendingClicks > 0) {
-            setTimeout(syncClicksToServer, 100); 
-        } else {
-
-            const latestUserData = await apiRequest('/user');
-            userData = latestUserData.user;
+        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSync });
+        if (updatedUser) {
+            userData = updatedUser;
             updateUI();
+        }
+    } 
+    
+    catch (err) {
+        console.error("Failed to sync clicks with server:", err);
+        pendingClicks += clicksToSync; 
+    } 
+    
+    finally {
+        isSyncing = false;
+
+        if (pendingClicks > 0) {
+            setTimeout(syncClicksToServer, 100);
         }
     }
 }
@@ -334,30 +315,30 @@ function openTopTab(evt, sortBy) {
     loadTopPlayers(sortBy);
 }
 
-async function loadTopPlayers(sortBy = 'coins') {
-    try {
-        const topListEl = document.getElementById('topList');
-        topListEl.innerHTML = '<li>Loading...</li>';
-        const players = await apiRequest(`/top?sortBy=${sortBy}`);
+// async function loadTopPlayers(sortBy = 'coins') {
+//     try {
+//         const topListEl = document.getElementById('topList');
+//         topListEl.innerHTML = '<li>Loading...</li>';
+//         const players = await apiRequest(`/top?sortBy=${sortBy}`);
 
-        const formatValue = (value) => {
-            return parseFloat(value).toFixed(16);
-        };
+//         const formatValue = (value) => {
+//             return parseFloat(value).toFixed(16);
+//         };
 
-        topListEl.innerHTML = '';
-        players.forEach((player, idx) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <span class="rank">${idx + 1}.</span>
-                <span class="name">@${player.username || 'anonymous'}</span>
-                <span class="value">${formatValue(player[sortBy])}</span>
-            `;
-            topListEl.appendChild(li);
-        });
-    } catch (e) {
-        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
-    }
-}
+//         topListEl.innerHTML = '';
+//         players.forEach((player, idx) => {
+//             const li = document.createElement('li');
+//             li.innerHTML = `
+//                 <span class="rank">${idx + 1}.</span>
+//                 <span class="name">@${player.username || 'anonymous'}</span>
+//                 <span class="value">${formatValue(player[sortBy])}</span>
+//             `;
+//             topListEl.appendChild(li);
+//         });
+//     } catch (e) {
+//         topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
+//     }
+// }
 
 // function startPassiveIncome() {
 //     setInterval(() => {
@@ -369,19 +350,44 @@ async function loadTopPlayers(sortBy = 'coins') {
 //     }, 1000);
 // }
 
+
+async function loadTopPlayers(sortBy = 'coins') {
+    try {
+        const topListEl = document.getElementById('topList');
+        topListEl.innerHTML = '<li>Loading...</li>';
+        const players = await apiRequest(`/top?sortBy=${sortBy}`);
+
+        topListEl.innerHTML = '';
+        players.forEach((player, idx) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="rank">${idx + 1}.</span>
+                <span class="name">@${player.username || 'anonymous'}</span>
+                <span class="value">${formatCoins(player[sortBy])}</span>
+            `;
+            topListEl.appendChild(li);
+        });
+    } catch (e) {
+        topListEl.innerHTML = '<li class="error">Failed to load top players.</li>';
+    }
+}
+
+
 function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
+
             userData.coins += userData.coins_per_sec;
-            updateUI(); 
+            updateUI();
         }
     }, 1000);
 }
 
 
+
 async function loadImages() {
     const container = document.getElementById('imagesContainer');
-    container.innerHTML = ''; // Clear old content
+    container.innerHTML = ''; 
 
     gameData.images.forEach(image => {
         const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
@@ -436,48 +442,111 @@ async function selectImage(imageId) {
     } catch (e) {}
 }
 
-function loadHistory() {
-    const searchInput = document.getElementById('history-search');
+// function loadHistory() {
+//     const searchInput = document.getElementById('history-search');
 
-    apiRequest('/transfers').then(data => {
+//     apiRequest('/transfers').then(data => {
+//         transactionHistory = data;
+//         renderHistory(); 
+//     });
+
+//     searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
+// }
+
+
+async function loadHistory() {
+    const historyListContainer = document.getElementById('history-list-container');
+    historyListContainer.innerHTML = 'Loading history...';
+
+    try {
+        const data = await apiRequest('/transfers');
         transactionHistory = data;
-        renderHistory(); 
-    });
-
-    searchInput.oninput = () => renderHistory(searchInput.value.toLowerCase());
+        renderHistory();
+    } catch (error) {
+        historyListContainer.innerHTML = '<p class="error">Failed to load history.</p>';
+    }
 }
 
-function renderHistory(filter = '') {
+
+function renderHistory() {
+    const historyListContainer = document.getElementById('history-list-container');
+    historyListContainer.innerHTML = `
+        <div class="history-controls">
+            <input type="text" id="history-search" placeholder="Filter by username...">
+        </div>
+        <ul id="history-list" class="history-list"></ul>
+    `;
+
+    const searchInput = document.getElementById('history-search');
     const list = document.getElementById('history-list');
-    list.innerHTML = '';
 
-    const filtered = transactionHistory.filter(tx =>
-        (tx.from?.username || '').toLowerCase().includes(filter) ||
-        (tx.to?.username || '').toLowerCase().includes(filter)
-    );
+    const doRender = (filter = '') => {
+        list.innerHTML = '';
 
-    filtered.forEach(tx => {
-        const item = document.createElement('li');
-        item.className = 'history-item';
+        const filtered = transactionHistory.filter(tx =>
+            (tx.from?.username || '').toLowerCase().includes(filter) ||
+            (tx.to?.username || '').toLowerCase().includes(filter)
+        );
 
-        const isSent = tx.from.username === userData.username;
-        const direction = isSent ? 'Sent to' : 'Received from';
-        const otherUser = isSent ? tx.to.username : tx.from.username;
-        const amountClass = isSent ? 'sent' : 'received';
-        const sign = isSent ? '-' : '+';
+        if (filtered.length === 0) {
+            list.innerHTML = '<li>No transactions found.</li>';
+            return;
+        }
 
-        item.innerHTML = `
-            <div class="history-details">
-                <p>${direction} <b>@${otherUser}</b></p>
-                <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
-            </div>
-            <div class="history-amount ${amountClass}">
-                ${sign}${parseFloat(tx.amount).toFixed(10)}
-            </div>
-        `;
-        list.appendChild(item);
-    });
+        filtered.forEach(tx => {
+            const item = document.createElement('li');
+            item.className = 'history-item';
+
+            const isSent = tx.from.username === userData.username;
+            const direction = isSent ? 'Sent to' : 'Received from';
+            const otherUser = isSent ? tx.to.username : tx.from.username;
+            const amountClass = isSent ? 'sent' : 'received';
+            const sign = isSent ? '-' : '+';
+
+            item.innerHTML = `
+                <div class="history-details">
+                    <p>${direction} <b>@${otherUser || 'anonymous'}</b></p>
+                    <span class="timestamp">${new Date(tx.created_at).toLocaleString()}</span>
+                </div>
+                <div class="history-amount ${amountClass}">
+                    ${sign}${formatCoins(parseFloat(tx.amount))}
+                </div>
+            `;
+            list.appendChild(item);
+        });
+    };
+
+    searchInput.oninput = () => doRender(searchInput.value.toLowerCase());
+    doRender(); 
 }
+
+// function loadAchievements() {
+//     const tasksContainer = document.getElementById('tasks-content');
+//     const achievementsContainer = document.getElementById('achievements-content');
+//     tasksContainer.innerHTML = '';
+//     achievementsContainer.innerHTML = '';
+
+//     gameData.tasks.forEach(task => {
+//         const isCompleted = userProgress.completed_task_ids.includes(task.id);
+//         const cardHtml = `
+//             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
+//                 <div class="achievement-icon">🏆</div>
+//                 <div class="achievement-content">
+//                     <h3>${task.name}</h3>
+//                     <p>${task.description}</p>
+//                 </div>
+//             </div>`;
+
+//         if (isCompleted) {
+//             achievementsContainer.innerHTML += cardHtml;
+//         } else {
+//             tasksContainer.innerHTML += cardHtml;
+//         }
+//     });
+
+//     if (tasksContainer.innerHTML === '') tasksContainer.innerHTML = '<p>No active tasks remaining!</p>';
+//     if (achievementsContainer.innerHTML === '') achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
+// }
 
 function loadAchievements() {
     const tasksContainer = document.getElementById('tasks-content');
@@ -485,8 +554,14 @@ function loadAchievements() {
     tasksContainer.innerHTML = '';
     achievementsContainer.innerHTML = '';
 
+    if (!gameData.tasks || gameData.tasks.length === 0) {
+        tasksContainer.innerHTML = '<p>No tasks available.</p>';
+        achievementsContainer.innerHTML = '<p>No achievements unlocked yet.</p>';
+        return;
+    }
+
     gameData.tasks.forEach(task => {
-        const isCompleted = userProgress.completed_task_ids.includes(task.id);
+        const isCompleted = userProgress.completed_task_ids && userProgress.completed_task_ids.includes(task.id);
         const cardHtml = `
             <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
                 <div class="achievement-icon">🏆</div>
@@ -536,92 +611,7 @@ function showFloatingCoin(x, y, amount) {
 }
 
 
-// async function init() {
-//     try {
-       
-//         const initialUserData = await apiRequest('/user');
-//         userData = initialUserData;
-//         updateUI();
 
-//         let lastServerCoins = userData.coins;
-//         let lastSyncTime = Date.now();
-//         let visualCoinUpdater;
-
-//         const startVisualUpdates = () => {
-//             if (visualCoinUpdater) clearInterval(visualCoinUpdater);
-
-//             visualCoinUpdater = setInterval(() => {
-//                 if (userData && userData.coins_per_sec > 0) {
-//                     const currentDisplayCoins = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
-//                     const newDisplayCoins = currentDisplayCoins + userData.coins_per_sec;
-//                     coinsEl.textContent = Math.floor(newDisplayCoins).toLocaleString();
-//                 }
-//             }, 1000);
-//         };
-
-//         const syncWithServer = async () => {
-//             if (isLoading) return;
-
-//             try {
-//                 const latestUserData = await apiRequest('/user');
-//                 userData = latestUserData; 
-
-
-//                 const timeSinceLastSync = (Date.now() - lastSyncTime) / 1000;
-//                 const expectedVisualGain = timeSinceLastSync * (userData.coins_per_sec || 0);
-//                 const expectedDisplayTotal = lastServerCoins + expectedVisualGain;
-//                 const currentDisplayTotal = parseFloat(coinsEl.textContent.replace(/,/g, '')) || 0;
-
-
-//                 if (Math.abs(currentDisplayTotal - expectedDisplayTotal) > (userData.coins_per_sec * 2)) {
-//                     coinsEl.textContent = Math.floor(userData.coins).toLocaleString();
-//                 }
-
-
-//                 updateUI();
-
-
-//                 lastServerCoins = userData.coins;
-//                 lastSyncTime = Date.now();
-
-//             } catch (error) {
-//                 console.warn("Periodic sync failed:", error.message);
-//             }
-//         };
-
-//         startVisualUpdates();
-//         setInterval(syncWithServer, 15000);
-
-//     } catch (e) {
-//         document.body.innerHTML = `<div class="error-container"><h1>Connection Error</h1><p>${e.message}</p><p>Please try restarting the app via Telegram.</p></div>`;
-//     }
-// }
-
-
-// async function init() {
-//     const loadingOverlay = document.getElementById('loading-overlay');
-//     const loadingText = document.getElementById('loading-text');
-//     if (!loadingOverlay) { console.error("Loading overlay not found!"); return; }
-
-//     try {
-//         const bonusData = await apiRequest('/claim-bonus', 'POST');
-//         if (bonusData && bonusData.earned_coins > 0) {
-//             showNotification(`Welcome back! You earned ${bonusData.earned_coins.toFixed(10)} coins.`, 'success');
-//         }
-
-//         const initialUserData = await apiRequest('/user');
-//         if (!initialUserData) throw new Error("Received empty user data from server.");
-
-//         userData = initialUserData;
-//         updateUI();
-//         loadingOverlay.classList.remove('active');
-//         startPassiveIncome();
-
-//     } catch (e) {
-//         loadingText.innerHTML = `Connection Error<br/><small>Please restart the app inside Telegram.</small>`;
-//         console.error("Initialization failed:", e);
-//     }
-// }
 
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
@@ -640,10 +630,16 @@ async function init() {
 
         const earnings = userDataResponse.earnings;
         if (earnings && earnings.earned_passive > 0) {
-            showNotification(`Welcome back! You earned ${earnings.earned_passive.toFixed(16)} coins.`, 'success');
+            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} coins.`, 'success');
         }
 
         updateUI();
+        const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
+        if (equippedImage) {
+            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
+        }
+
+
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
     } catch (e) {
@@ -652,14 +648,25 @@ async function init() {
 }
 
 
+
 function openModal(modalId) 
 { 
     document.getElementById(modalId).classList.remove('hidden'); 
 }
 
+
 function closeAllModals() { 
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden')); 
 }
+
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeAllModals();
+        }
+    });
+});
+
 
 function openSubTab(evt, tabId) {
     const modal = evt.target.closest('.modal-content');
@@ -667,7 +674,7 @@ function openSubTab(evt, tabId) {
     modal.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
     modal.querySelectorAll('.sub-tab-link').forEach(l => l.classList.remove('active'));
     modal.querySelector(`#${tabId}`).classList.add('active');
-    
+
     evt.target.classList.add('active');
 }
 
