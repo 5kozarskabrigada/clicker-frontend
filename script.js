@@ -626,6 +626,7 @@ async function init() {
             apiRequest('/user-tasks')
         ]);
 
+
         userData = userDataResponse.user;
         gameData = gameDataResponse;
         userProgress = userProgressResponse;
@@ -646,6 +647,10 @@ async function init() {
         loadingOverlay.classList.remove('active');
         startPassiveIncome();
     } catch (e) {
+        // ADD THIS LINE to see the specific error in the developer console
+        console.error('Initialization failed:', e);
+
+        // This is the code that is currently running and causing the error screen
         document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please restart inside Telegram.</small>`;
     }
 }
