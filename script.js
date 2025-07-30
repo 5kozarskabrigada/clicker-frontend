@@ -39,27 +39,32 @@ const offlineBaseCost = 0.000001;
 
 const TIER_COST_MULTIPLIER = 16;
 const INTRA_TIER_COST_MULTIPLIER = 1.215;
+
 const upgrades = {
+
     click: [
-        { id: 'click_tier_1', name: 'A Cups', benefit: '+0.000000001 per click', base_cost: 0.000000064, tier: 1 },
-        { id: 'click_tier_2', name: 'B Cups', benefit: '+0.000000008 per click', base_cost: 0.000001024, tier: 2 },
-        { id: 'click_tier_3', name: 'C Cups', benefit: '+0.000000064 per click', base_cost: 0.000016384, tier: 3 },
-        { id: 'click_tier_4', name: 'D Cups', benefit: '+0.000000512 per click', base_cost: 0.000262144, tier: 4 },
-        { id: 'click_tier_5', name: 'DD Cups', benefit: '+0.000004096 per click', base_cost: 0.004194304, tier: 5 },
+        { id: 'click_tier_1', name: 'A Cups', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'click_tier_2', name: 'B Cups', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'click_tier_3', name: 'C Cups', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'click_tier_4', name: 'D Cups', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'click_tier_5', name: 'DD Cups', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ],
+
     auto: [
-        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000001 per sec', base_cost: 0.000000064, tier: 1 },
-        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000008 per sec', base_cost: 0.000001024, tier: 2 },
-        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000064 per sec', base_cost: 0.000016384, tier: 3 },
-        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000000512 per sec', base_cost: 0.000262144, tier: 4 },
-        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000004096 per sec', base_cost: 0.004194304, tier: 5 },
+
+        { id: 'auto_tier_1', name: 'Basic Lotion', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'auto_tier_2', name: 'Enhanced Serum', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'auto_tier_3', name: 'Collagen Cream', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'auto_tier_4', name: 'Firming Gel', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'auto_tier_5', name: 'Miracle Elixir', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ],
+
     offline: [
-        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001 per hour', base_cost: 0.000000064, tier: 1 },
-        { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008 per hour', base_cost: 0.000001024, tier: 2 },
-        { id: 'offline_tier_3', name: 'Padded Bra', benefit: '+0.000000064 per hour', base_cost: 0.000016384, tier: 3 },
-        { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512 per hour', base_cost: 0.000262144, tier: 4 },
-        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096 per hour', base_cost: 0.004194304, tier: 5 },
+        { id: 'offline_tier_1', name: 'Simple Bralette', benefit: '+0.000000001', base_cost: 0.000000064, tier: 1 },
+        { id: 'offline_tier_2', name: 'Sports Bra', benefit: '+0.000000008', base_cost: 0.000001024, tier: 2 },
+        { id: 'offline_tier_4', name: 'Padded Bra', benefit: '+0.000000064', base_cost: 0.000016384, tier: 3 },
+        { id: 'offline_tier_4', name: 'Push-Up Bra', benefit: '+0.000000512', base_cost: 0.000262144, tier: 4 },
+        { id: 'offline_tier_5', name: 'Designer Corset', benefit: '+0.000004096', base_cost: 0.004194304, tier: 5 },
     ]
 };
 
@@ -724,39 +729,6 @@ function startPassiveIncome() {
     }, 1000);
 }
 
-async function handleTransfer() {
-    const toUsername = document.getElementById('transferUsername').value.trim().replace(/^@/, '');
-    const amount = parseFloat(document.getElementById('transferAmount').value);
-    const transferMessageEl = document.getElementById('transferMessage');
-
-    if (!toUsername || !amount || isNaN(amount) || amount <= 0) {
-        transferMessageEl.textContent = 'Please enter a valid username and amount.';
-        transferMessageEl.className = 'transfer-message error';
-        return;
-    }
-
-    // Optional: Add a confirmation before sending
-    // if (!confirm(`Send ${formatCoins(amount)} coins to @${toUsername}?`)) {
-    //     return;
-    // }
-
-    try {
-        const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
-        userData = result.updatedSender;
-        updateUI();
-        transferMessageEl.textContent = result.message;
-        transferMessageEl.className = 'transfer-message success';
-        
-        // Clear the input fields on success
-        document.getElementById('transferUsername').value = '';
-        document.getElementById('transferAmount').value = '';
-
-    } catch (e) {
-        transferMessageEl.textContent = e.message;
-        transferMessageEl.className = 'transfer-message error';
-    }
-}
-
 function setupEventListeners() {
 
     for (const key in navButtons) {
@@ -775,6 +747,6 @@ function setupEventListeners() {
 }
 
 tg.ready();
-setupEventListeners();
 init();
 showPage('main');
+
