@@ -167,10 +167,10 @@ clickImage.onclick = (event) => {
 
     tg.HapticFeedback.impactOccurred('light');
 
-    clickBuffer++;
-
     userData.coins += userData.coins_per_click;
     updateUI();
+
+    clickBuffer++;
 
     clickImage.style.transform = 'scale(0.95)';
     setTimeout(() => {
@@ -178,7 +178,7 @@ clickImage.onclick = (event) => {
     }, 100);
 
     clearTimeout(window.clickDebounce);
-    window.clickDebounce = setTimeout(syncClicks, 1000);
+    window.clickDebounce = setTimeout(syncClicks, 500); 
 };
 
 
@@ -193,14 +193,14 @@ async function syncClicks() {
 
     try {
         const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
-
         userData = updatedUser;
         updateUI();
-    } 
+    }
     catch (err) {
         console.error("Click sync failed:", err);
-        clickBuffer += clicksToSend;
-    } 
+        clickBuffer = Math.min(clicksToSend + clickBuffer, 1000);
+        setTimeout(syncClicks, 2000);
+    }
     finally {
         isSyncing = false;
     }
@@ -587,10 +587,19 @@ async function init() {
         if (equippedImage) {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
-
+        loadPendingClicks();
         startPassiveIncome();
 
         loadingOverlay.classList.remove('active');
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                syncClicks();
+            }
+        });
+
+        setInterval(syncClicks, 5000);
+
 
     } catch (e) {
         document.getElementById('loading-text').innerHTML = `
@@ -601,6 +610,23 @@ async function init() {
     }
 }
 
+function savePendingClicks() {
+    if (clickBuffer > 0) {
+        localStorage.setItem('pendingClicks', clickBuffer.toString());
+    }
+}
+
+
+function loadPendingClicks() {
+    const pending = localStorage.getItem('pendingClicks');
+    if (pending) {
+        clickBuffer = parseInt(pending) || 0;
+        localStorage.removeItem('pendingClicks');
+        if (clickBuffer > 0) {
+            setTimeout(syncClicks, 1000);
+        }
+    }
+}
 
 function openUpgradeTab(event, tabName) {
     const page = event.currentTarget.closest('.page');
