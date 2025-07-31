@@ -19,26 +19,32 @@
     <div id="app">
         <div class="app-content">
 
-            <section id="main" class="page active">
-                <div class="main-header">
-                    <h2>Coin Clicker</h2>
-                </div>
-                <div class="total-coins-container">
-                    <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
-                    <span id="coins" class="total-coins-value">0.000000000</span>
+        <section id="main" class="page active">
+
+            <div class="game-area">
+
+
+                <div id="clickImage" class="character-image" style="background-image: url('https://i.pinimg.com/736x/0d/0d/70/0d0d70d3a7cbc5c060ae5ab79dd4fe23.jpg');"></div>
+
+                <div class="stats-overlay">
+
+
+                    <div class="total-coins-display">
+                        <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
+                        <span id="coins" class="total-coins-value">0.000000000</span>
+                    </div>
+
+                    <div class="sub-stats-display">
+                        <div class="sub-stat"><span id="coinsPerClick">0</span>/click</div>
+                        <div class="sub-stat">⏱<span id="coinsPerSec">0</span>/sec</div>
+                    </div>
+
                 </div>
 
-            <div class="simple-stats">
-                <div class="simple-stat">🖱️ <span id="coinsPerClick">0</span>/click</div>
-                <div class="simple-stat">⏱️ <span id="coinsPerSec">0</span>/sec</div>
-                <div class="simple-stat">💤 <span id="offlineRate">0</span>/hr</div>
+                <button id="goto-images-btn" class="image-icon-btn">🎨</button>
             </div>
+        </section>
 
-                <div class="clicker-zone">
-                    <div id="clickImage" class="click-image"></div>
-                    <button id="goto-images-btn" class="image-icon-btn">🎨</button>
-                </div>
-            </section>
 
 
             <section id="upgrade" class="page">
