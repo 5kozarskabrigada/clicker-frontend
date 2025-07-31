@@ -748,6 +748,36 @@ input[type="number"]:focus {
 }
 
 
+/* Simplified Stats Container Styles */
+.simple-stats {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.75rem 1rem;
+    margin: 0 auto 1.5rem auto;
+    max-width: 25rem;
+    backdrop-filter: blur(10px);
+    gap: 1rem;
+    text-align: center;
+}
+
+.simple-stat {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.simple-stat span {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
 .bottom-nav {
     position: fixed;
     bottom: 0;

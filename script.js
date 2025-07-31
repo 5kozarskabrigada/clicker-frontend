@@ -601,6 +601,35 @@ async function init() {
     }
 }
 
+
+function openUpgradeTab(event, tabName) {
+    const page = event.currentTarget.closest('.page');
+
+    page.querySelectorAll('.upgrade-tab-content').forEach(content => content.classList.remove('active'));
+    page.querySelectorAll('.upgrade-tab-link').forEach(link => link.classList.remove('active'));
+
+    document.getElementById(tabName).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function openSubTab(event, tabName) {
+    const page = event.currentTarget.closest('.page');
+
+    page.querySelectorAll('.sub-tab-content').forEach(content => content.classList.remove('active'));
+    page.querySelectorAll('.sub-tab-link').forEach(link => link.classList.remove('active'));
+
+    document.getElementById(tabName).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+
+function openTopTab(event, sortBy) {
+    const page = event.currentTarget.closest('.page');
+    page.querySelectorAll('.top-tab-link').forEach(link => link.classList.remove('active'));
+
+    event.currentTarget.classList.add('active');
+    loadTopPlayers(sortBy);
+}
+
 function startPassiveIncome() {
     setInterval(() => {
         if (userData && userData.coins_per_sec > 0) {
@@ -622,17 +651,6 @@ function setupEventListeners() {
     document.getElementById('goto-images-btn').onclick = () => showPage('images');
     document.getElementById('transferBtn').onclick = handleTransfer;
 
-    document.querySelectorAll('.upgrade-tab-link').forEach(link => {
-        link.addEventListener('click', (e) => openUpgradeTab(e, link.dataset.tab));
-    });
-
-    document.querySelectorAll('.sub-tab-link').forEach(link => {
-        link.addEventListener('click', (e) => openSubTab(e, link.dataset.tab));
-    });
-
-    document.querySelectorAll('.top-tab-link').forEach(link => {
-        link.addEventListener('click', (e) => openTopTab(e, link.dataset.sort));
-    });
 }
 
 
