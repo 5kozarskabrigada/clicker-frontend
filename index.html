@@ -18,7 +18,7 @@
     </div>
     <div id="app">
         <div class="app-content">
-            <!-- Main Clicker Page -->
+
             <section id="main" class="page active">
                 <div class="main-header">
                     <h2>Coin Clicker</h2>
@@ -28,19 +28,19 @@
                     <span id="coins" class="total-coins-value">0.000000000</span>
                 </div>
 
-                <!-- Redesigned Stats Container -->
                 <div class="stats-container">
                     <div class="stat-box">
+                        <div class="stat-icon">🖱️</div>
                         <span class="stat-value" id="coinsPerClick">0</span>
                         <span class="stat-label">per click</span>
                     </div>
-                    <div class="divider"></div>
                     <div class="stat-box">
+                        <div class="stat-icon">⏱️</div>
                         <span class="stat-value" id="coinsPerSec">0</span>
                         <span class="stat-label">per second</span>
                     </div>
-                    <div class="divider"></div>
                     <div class="stat-box">
+                        <div class="stat-icon">💤</div>
                         <span class="stat-value" id="offlineRate">0</span>
                         <span class="stat-label">offline / hr</span>
                     </div>
@@ -52,7 +52,7 @@
                 </div>
             </section>
 
-            <!-- Upgrades Page -->
+
             <section id="upgrade" class="page">
                 <h1 class="page-title">⚙️ Upgrades</h1>
                 <div class="upgrade-nav">
@@ -66,52 +66,89 @@
                 <div id="offlineUpgrades" class="upgrade-tab-content"></div>
             </section>
 
-            <!-- Other Pages -->
+
             <section id="tasks" class="page">
                 <h1 class="page-title">🎯 Progress</h1>
                 <div class="sub-nav">
                     <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active
                         Tasks</button>
-                    <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
+                    <button class="sub-tab-link"
+                        onclick="openSubTab(event, 'achievements-content')">Achievements</button>
                 </div>
-                <div class="tasks-container">
-                    <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
-                    <div id="achievements-content" class="sub-tab-content achievements-list"></div>
+
+                <div id="tasks-content" class="sub-tab-content active">
+                    <div class="tasks-container">
+                        <h2 class="section-subtitle">Current Tasks</h2>
+                        <div class="tasks-list"></div>
+                    </div>
+                </div>
+
+                <div id="achievements-content" class="sub-tab-content">
+                    <div class="achievements-container">
+                        <h2 class="section-subtitle">Your Achievements</h2>
+                        <div class="achievements-list"></div>
+                    </div>
                 </div>
             </section>
+
+
             <section id="images" class="page">
                 <h1 class="page-title">🎨 Coin Images</h1>
+                <div class="skins-header">
+                    <div class="skins-filter">
+                        <button class="filter-btn active" onclick="filterSkins('all')">All</button>
+                        <button class="filter-btn" onclick="filterSkins('unlocked')">Unlocked</button>
+                        <button class="filter-btn" onclick="filterSkins('locked')">Locked</button>
+                    </div>
+                </div>
                 <div id="imagesContainer" class="skins-grid"></div>
             </section>
+
+
             <section id="top" class="page">
-                <h1 class="page-title">🏆 Top Players</h1>
+                <h1 class="page-title">🏆 Leaderboard</h1>
                 <div class="top-nav">
                     <button class="top-tab-link active" onclick="openTopTab(event, 'coins')">Total Coins</button>
                     <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_click')">Per Click</button>
                     <button class="top-tab-link" onclick="openTopTab(event, 'coins_per_sec')">Per Second</button>
                 </div>
-                <ol id="topList" class="leaderboard-list"></ol>
+                <div class="leaderboard-container">
+                    <ol id="topList" class="leaderboard-list"></ol>
+                </div>
             </section>
+
+            
             <section id="transfer" class="page">
                 <h1 class="page-title">💸 Wallet</h1>
-                <div class="transfer-form">
-                    <div class="input-group"><label for="transferUsername">Recipient's Username</label><input
-                            id="transferUsername" type="text" placeholder="@username" /></div>
-                    <div class="input-group"><label for="transferAmount">Amount to Send</label><input
-                            id="transferAmount" type="number" placeholder="0.000000000" min="0" step="0.000000001" />
+                <div class="wallet-container">
+                    <div class="transfer-form">
+                        <h2 class="section-subtitle">Send Coins</h2>
+                        <div class="input-group">
+                            <label for="transferUsername">Recipient's Username</label>
+                            <input id="transferUsername" type="text" placeholder="@username" />
+                        </div>
+                        <div class="input-group">
+                            <label for="transferAmount">Amount to Send</label>
+                            <input id="transferAmount" type="number" placeholder="0.000000000" min="0"
+                                step="0.000000001" />
+                        </div>
+                        <button id="transferBtn" class="action-button">Send Coins</button>
+                        <p id="transferMessage" class="transfer-message"></p>
                     </div>
-                    <button id="transferBtn" class="action-button">Send Coins</button>
-                    <p id="transferMessage" class="transfer-message"></p>
+
+                    <div class="history-section">
+                        <h2 class="section-subtitle">Transaction History</h2>
+                        <div class="history-controls">
+                            <input type="text" id="history-search" placeholder="Search transactions...">
+                        </div>
+                        <ul id="history-list" class="history-list"></ul>
+                    </div>
                 </div>
-                <h2 class="section-subtitle">Transaction History</h2>
-                <div class="history-controls"><input type="text" id="history-search"
-                        placeholder="Filter by username..."></div>
-                <ul id="history-list" class="history-list"></ul>
             </section>
         </div>
     </div>
 
-    <!-- 5-Button Navigation Bar -->
+
     <nav class="bottom-nav">
         <button id="nav-upgrade" class="nav-btn"><span class="nav-icon">⚡️</span><span
                 class="nav-text">Upgrades</span></button>
