@@ -163,22 +163,15 @@ function updateUI() {
 }
 
 clickImage.onclick = (event) => {
-    if (!userData) return;
-
+    if (!userData || !userData.coins_per_click) return;
     tg.HapticFeedback.impactOccurred('light');
 
     userData.coins += userData.coins_per_click;
     updateUI();
-
     clickBuffer++;
 
     clickImage.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        clickImage.style.transform = 'scale(1)';
-    }, 100);
-
-    clearTimeout(window.clickDebounce);
-    window.clickDebounce = setTimeout(syncClicks, 500); 
+    setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
 };
 
 
@@ -186,46 +179,37 @@ async function syncClicks() {
     if (clickBuffer === 0 || isSyncing) {
         return;
     }
-
     isSyncing = true;
     const clicksToSend = clickBuffer;
     clickBuffer = 0; 
 
     try {
         const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
-        userData = updatedUser;
+        userData = updatedUser; 
         updateUI();
-    }
-    catch (err) {
-        console.error("Click sync failed:", err);
-        clickBuffer = Math.min(clicksToSend + clickBuffer, 1000);
-        setTimeout(syncClicks, 2000);
-    }
-    finally {
+    } catch (err) {
+        console.error("Click sync failed, returning clicks to buffer:", err);
+        clickBuffer += clicksToSend; 
+    } finally {
         isSyncing = false;
     }
 }
 
 async function purchaseUpgrade(upgradeId) {
+    await syncClicks(); 
     try {
-        await syncClicks();
-
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
         updateUI();
-        startPassiveIncome(); 
+        startPassiveIncome();
         showNotification('Upgrade successful!', 'success');
         tg.HapticFeedback.notificationOccurred('success');
-
-        if (pages.top.classList.contains('active')) {
-            loadTopPlayers();
-        }
+        if (pages.top.classList.contains('active')) { loadTopPlayers(); }
     } catch (e) {
         showNotification(e.message, 'error');
         tg.HapticFeedback.notificationOccurred('error');
     }
 }
-
 async function handleTransfer() {
     const transferUsernameEl = document.getElementById('transferUsername');
     const transferAmountEl = document.getElementById('transferAmount');
@@ -564,12 +548,14 @@ async function init() {
     generateUpgradeHTML();
 
     try {
+
+        loadPendingClicks();
+
         const data = await apiRequest('/user');
         userData = data.user;
 
         const earnings = data.earnings;
         if (earnings && earnings.earned_passive > 0) {
-
             setTimeout(() => {
                 showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} while offline.`, 'success');
             }, 600);
@@ -577,7 +563,6 @@ async function init() {
 
         const gamedata = await apiRequest('/game-data');
         gameData = gamedata;
-
         const progress = await apiRequest('/user-progress');
         userProgress = progress;
 
@@ -587,25 +572,13 @@ async function init() {
         if (equippedImage) {
             clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
-        loadPendingClicks();
+
         startPassiveIncome();
 
         loadingOverlay.classList.remove('active');
 
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') {
-                syncClicks();
-            }
-        });
-
-        setInterval(syncClicks, 5000);
-
-
     } catch (e) {
-        document.getElementById('loading-text').innerHTML = `
-            Connection Error<br/>
-            <small>Please try again.</small>
-        `;
+        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please try again.</small>`;
         console.error("Initialization failed:", e);
     }
 }
@@ -620,14 +593,14 @@ function savePendingClicks() {
 function loadPendingClicks() {
     const pending = localStorage.getItem('pendingClicks');
     if (pending) {
-        clickBuffer = parseInt(pending) || 0;
-        localStorage.removeItem('pendingClicks');
+        clickBuffer = parseInt(pending, 10) || 0;
+        localStorage.removeItem('pendingClicks'); 
         if (clickBuffer > 0) {
-            setTimeout(syncClicks, 1000);
+            console.log(`Loaded ${clickBuffer} pending clicks from previous session.`);
+            syncClicks();
         }
     }
 }
-
 function openUpgradeTab(event, tabName) {
     const page = event.currentTarget.closest('.page');
 
@@ -658,26 +631,33 @@ function openTopTab(event, sortBy) {
 }
 
 function startPassiveIncome() {
-    if (activeIncomeInterval) {
-        clearInterval(activeIncomeInterval);
+    if (activeIncomeInterval) { 
+        clearInterval(activeIncomeInterval); 
     }
     if (userData && userData.coins_per_sec > 0) {
         activeIncomeInterval = setInterval(() => {
-            const incomePerTick = userData.coins_per_sec / 10; 
-            userData.coins += incomePerTick;
+
+            userData.coins += (userData.coins_per_sec / 10);
             updateUI();
+
         }, 100);
     }
 }
 
 function setupEventListeners() {
     for (const key in navButtons) {
-        if (navButtons[key]) {
-            navButtons[key].onclick = () => showPage(key);
-        }
+        if (navButtons[key]) { navButtons[key].onclick = () => showPage(key); }
     }
     document.getElementById('goto-images-btn').onclick = () => showPage('images');
     document.getElementById('transferBtn').onclick = handleTransfer;
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            savePendingClicks();
+        }
+    });
+
+    setInterval(syncClicks, 5000);
 }
 
 
