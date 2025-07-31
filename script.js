@@ -7,8 +7,8 @@ let userData = null;
 let gameData = { images: [], tasks: [] };
 let userProgress = { unlocked_image_ids: [] };
 let transactionHistory = [];
-let clickEffects = [];
 let lastClickTime = 0;
+let activeIncomeInterval = null;
 
 
 const coinsEl = document.getElementById('coins');
@@ -18,8 +18,6 @@ const clickImage = document.getElementById('clickImage');
 const offlineRateEl = document.getElementById('offlineRate');
 const notificationContainer = document.getElementById('notificationContainer');
 
-
-
 const pages = {
     main: document.getElementById('main'),
     upgrade: document.getElementById('upgrade'),
@@ -28,7 +26,6 @@ const pages = {
     top: document.getElementById('top'),
     transfer: document.getElementById('transfer'),
 };
-
 
 const navButtons = {
     main: document.getElementById('nav-main'),
@@ -75,6 +72,7 @@ function showPage(pageId) {
     if (navButtons[pageId]) {
         navButtons[pageId].classList.add('active');
     }
+
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
@@ -93,7 +91,9 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
             const responseData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
             throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
         }
-        return await response.json();
+
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
         showNotification(error.message, 'error');
@@ -101,9 +101,9 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
     }
 }
 
-function formatCoins(amount) {
-    if (typeof amount !== 'number') return '0.000000000';
-    return amount.toFixed(9);
+function formatCoins(amount, precision = 9) {
+    if (typeof amount !== 'number' || isNaN(amount)) return (0).toFixed(precision);
+    return amount.toFixed(precision);
 }
 
 
@@ -144,12 +144,14 @@ function generateUpgradeHTML() {
 }
 
 
+
+
 function updateUI() {
     if (!userData) return;
     coinsEl.textContent = formatCoins(userData.coins);
     coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
     coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
-    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
+    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour);
     for (const type in upgrades) {
         upgrades[type].forEach(upgrade => {
             const levelEl = document.getElementById(`${upgrade.id}_level`);
@@ -164,30 +166,17 @@ function updateUI() {
     }
 }
 
-
 clickImage.onclick = (event) => {
     if (!userData) return;
 
     const now = Date.now();
-    if (now - lastClickTime < 100) return; 
+    if (now - lastClickTime < 100) return;
     lastClickTime = now;
 
     tg.HapticFeedback.impactOccurred('light');
+
     userData.coins += userData.coins_per_click;
     updateUI();
-
-
-    const clickX = event.clientX;
-    const clickY = event.clientY;
-
-    for (let i = 0; i < 3; i++) {
-        setTimeout(() => {
-            const offsetX = (Math.random() * 40) - 20;
-            const offsetY = (Math.random() * 40) - 20;
-            showFloatingCoin(clickX + offsetX, clickY + offsetY, `+${formatCoins(userData.coins_per_click / 3)}`);
-        }, i * 100);
-    }
-
 
     clickImage.style.transform = 'scale(0.95)';
     setTimeout(() => {
@@ -196,8 +185,13 @@ clickImage.onclick = (event) => {
 
     clearTimeout(window.clickDebounce);
     window.clickDebounce = setTimeout(() => {
-        apiRequest('/click', 'POST').catch(err => console.error("Click sync failed:", err));
-    }, 500);
+        apiRequest('/click', 'POST', { clicks: 1 }) 
+            .then(updatedUser => {
+                userData = updatedUser; 
+                updateUI();
+            })
+            .catch(err => console.error("Click sync failed:", err));
+    }, 1000); 
 };
 
 async function purchaseUpgrade(upgradeId) {
@@ -205,18 +199,12 @@ async function purchaseUpgrade(upgradeId) {
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
         updateUI();
+        startPassiveIncome(); 
         showNotification('Upgrade successful!', 'success');
         tg.HapticFeedback.notificationOccurred('success');
 
-
-        const upgradeEl = document.getElementById(upgradeId);
-        if (upgradeEl) {
-            upgradeEl.style.transform = 'translateY(-5px)';
-            upgradeEl.style.boxShadow = '0 10px 20px rgba(138, 99, 242, 0.3)';
-            setTimeout(() => {
-                upgradeEl.style.transform = '';
-                upgradeEl.style.boxShadow = '';
-            }, 300);
+        if (pages.top.classList.contains('active')) {
+            loadTopPlayers();
         }
     } catch (e) {
         showNotification(e.message, 'error');
@@ -265,12 +253,13 @@ async function handleTransfer() {
 
 
 async function loadTopPlayers(sortBy = 'coins') {
+    const currentSort = document.querySelector('.top-tab-link.active')?.dataset.sort || 'coins';
     try {
         const topListEl = document.getElementById('topList');
         topListEl.innerHTML = '<li class="loading-state">Loading leaderboard...</li>';
         const players = await apiRequest(`/top?sortBy=${sortBy}`);
 
-        if (players.length === 0) {
+        if (!players || players.length === 0) {
             topListEl.innerHTML = '<li class="empty-state">No players found</li>';
             return;
         }
@@ -288,7 +277,7 @@ async function loadTopPlayers(sortBy = 'coins') {
             topListEl.appendChild(li);
         });
     } catch (e) {
-        topListEl.innerHTML = '<li class="error-state">Failed to load leaderboard</li>';
+        document.getElementById('topList').innerHTML = '<li class="error-state">Failed to load leaderboard</li>';
     }
 }
 
@@ -522,7 +511,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.classList.remove('show');
         notification.addEventListener('transitionend', () => notification.remove());
-    }, 3000);
+    }, 4000); 
 }
 
 function showFloatingCoin(x, y, amount) {
@@ -562,20 +551,22 @@ async function init() {
     generateUpgradeHTML();
 
     try {
-        const [userDataResponse, gameDataResponse, userProgressResponse] = await Promise.all([
-            apiRequest('/user'),
-            apiRequest('/game-data'),
-            apiRequest('/user-progress')
-        ]);
+        const data = await apiRequest('/user');
+        userData = data.user;
 
-        userData = userDataResponse.user;
-        gameData = gameDataResponse;
-        userProgress = userProgressResponse;
-
-        const earnings = userDataResponse.earnings;
+        const earnings = data.earnings;
         if (earnings && earnings.earned_passive > 0) {
-            showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} while offline.`, 'success');
+
+            setTimeout(() => {
+                showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} while offline.`, 'success');
+            }, 600);
         }
+
+        const gamedata = await apiRequest('/game-data');
+        gameData = gamedata;
+
+        const progress = await apiRequest('/user-progress');
+        userProgress = progress;
 
         updateUI();
 
@@ -586,16 +577,12 @@ async function init() {
 
         startPassiveIncome();
 
-        animationLoop();
-
-        setTimeout(() => {
-            loadingOverlay.classList.remove('active');
-        }, 500);
+        loadingOverlay.classList.remove('active');
 
     } catch (e) {
         document.getElementById('loading-text').innerHTML = `
             Connection Error<br/>
-            <small>Please try again later</small>
+            <small>Please try again.</small>
         `;
         console.error("Initialization failed:", e);
     }
@@ -624,6 +611,7 @@ function openSubTab(event, tabName) {
 
 function openTopTab(event, sortBy) {
     const page = event.currentTarget.closest('.page');
+
     page.querySelectorAll('.top-tab-link').forEach(link => link.classList.remove('active'));
 
     event.currentTarget.classList.add('active');
@@ -631,26 +619,26 @@ function openTopTab(event, sortBy) {
 }
 
 function startPassiveIncome() {
-    setInterval(() => {
-        if (userData && userData.coins_per_sec > 0) {
-            userData.coins += userData.coins_per_sec;
+    if (activeIncomeInterval) {
+        clearInterval(activeIncomeInterval);
+    }
+    if (userData && userData.coins_per_sec > 0) {
+        activeIncomeInterval = setInterval(() => {
+            const incomePerTick = userData.coins_per_sec / 10; 
+            userData.coins += incomePerTick;
             updateUI();
-        }
-    }, 1000);
+        }, 100);
+    }
 }
 
 function setupEventListeners() {
-
     for (const key in navButtons) {
         if (navButtons[key]) {
             navButtons[key].onclick = () => showPage(key);
         }
     }
-
-
     document.getElementById('goto-images-btn').onclick = () => showPage('images');
     document.getElementById('transferBtn').onclick = handleTransfer;
-
 }
 
 
