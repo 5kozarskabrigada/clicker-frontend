@@ -748,10 +748,7 @@ input[type="number"]:focus {
 }
 
 
-/*
-  ADD this CSS to the bottom of your style.css file.
-  It will override the previous styles for the stats bar.
-*/
+
 
 .simple-stats {
     display: flex;

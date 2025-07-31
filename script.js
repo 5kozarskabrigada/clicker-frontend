@@ -10,6 +10,8 @@ let transactionHistory = [];
 let lastClickTime = 0;
 let activeIncomeInterval = null;
 
+let clickBuffer = 0;
+let isSyncing = false;
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -91,7 +93,6 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
             const responseData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
             throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
         }
-
         const text = await response.text();
         return text ? JSON.parse(text) : {};
     } catch (error) {
@@ -105,8 +106,6 @@ function formatCoins(amount, precision = 9) {
     if (typeof amount !== 'number' || isNaN(amount)) return (0).toFixed(precision);
     return amount.toFixed(precision);
 }
-
-
 
 function generateUpgradeHTML() {
     const containers = {
@@ -143,9 +142,6 @@ function generateUpgradeHTML() {
     }
 }
 
-
-
-
 function updateUI() {
     if (!userData) return;
     coinsEl.textContent = formatCoins(userData.coins);
@@ -169,11 +165,9 @@ function updateUI() {
 clickImage.onclick = (event) => {
     if (!userData) return;
 
-    const now = Date.now();
-    if (now - lastClickTime < 100) return;
-    lastClickTime = now;
-
     tg.HapticFeedback.impactOccurred('light');
+
+    clickBuffer++;
 
     userData.coins += userData.coins_per_click;
     updateUI();
@@ -184,18 +178,38 @@ clickImage.onclick = (event) => {
     }, 100);
 
     clearTimeout(window.clickDebounce);
-    window.clickDebounce = setTimeout(() => {
-        apiRequest('/click', 'POST', { clicks: 1 }) 
-            .then(updatedUser => {
-                userData = updatedUser; 
-                updateUI();
-            })
-            .catch(err => console.error("Click sync failed:", err));
-    }, 1000); 
+    window.clickDebounce = setTimeout(syncClicks, 1000);
 };
+
+
+async function syncClicks() {
+    if (clickBuffer === 0 || isSyncing) {
+        return;
+    }
+
+    isSyncing = true;
+    const clicksToSend = clickBuffer;
+    clickBuffer = 0; 
+
+    try {
+        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
+
+        userData = updatedUser;
+        updateUI();
+    } 
+    catch (err) {
+        console.error("Click sync failed:", err);
+        clickBuffer += clicksToSend;
+    } 
+    finally {
+        isSyncing = false;
+    }
+}
 
 async function purchaseUpgrade(upgradeId) {
     try {
+        await syncClicks();
+
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
         userData = updatedUser;
         updateUI();
@@ -266,10 +280,9 @@ async function loadTopPlayers(sortBy = 'coins') {
 
         topListEl.innerHTML = '';
         players.forEach((player, idx) => {
-            const medal = idx < 3 ? ['🥇', '🥈', '🥉'][idx] : '';
             const li = document.createElement('li');
             li.innerHTML = `
-                <span class="rank">${idx + 1}${medal}</span>
+                <span class="rank">${idx + 1}</span>
                 <span class="name">@${player.username || 'anonymous'}</span>
                 <span class="value">${formatCoins(player[sortBy])}</span>
             `;
