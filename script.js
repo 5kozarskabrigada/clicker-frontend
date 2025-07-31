@@ -9,6 +9,7 @@ let userProgress = { unlocked_image_ids: [] };
 let transactionHistory = [];
 let lastClickTime = 0;
 let activeIncomeInterval = null;
+let animationTimeout = null; 
 
 let clickBuffer = 0;
 let isSyncing = false;
@@ -162,16 +163,30 @@ function updateUI() {
     }
 }
 
+
 clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
-    tg.HapticFeedback.impactOccurred('light');
 
+    const staticImg = document.getElementById('clickImageStatic');
+    const gifImg = document.getElementById('clickImageGif');
+
+    clearTimeout(animationTimeout);
+
+    gifImg.style.opacity = '1';
+    staticImg.style.opacity = '0';
+
+    animationTimeout = setTimeout(() => {
+        gifImg.style.opacity = '0';
+        staticImg.style.opacity = '1';
+    }, 800);
+
+    tg.HapticFeedback.impactOccurred('light');
     userData.coins += userData.coins_per_click;
     updateUI();
     clickBuffer++;
 
-    clickImage.style.transform = 'scale(0.95)';
-    setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
+    clearTimeout(window.clickDebounce);
+    window.clickDebounce = setTimeout(syncClicks, 1000);
 };
 
 
