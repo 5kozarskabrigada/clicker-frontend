@@ -7,7 +7,7 @@
     <title>Coin Clicker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -27,19 +27,28 @@
                     <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
                     <span id="coins" class="total-coins-value">0.000000000</span>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-item"><span class="stat-label">per click</span><span id="coinsPerClick"
-                            class="stat-value">0</span></div>
-                    <div class="stat-item"><span class="stat-label">per second</span><span id="coinsPerSec"
-                            class="stat-value">0</span></div>
-                    <div class="stat-item full-width"><span class="stat-label">offline bonus / hr</span><span
-                            id="offlineRate" class="stat-value">0</span></div>
+
+                <!-- Redesigned Stats Container -->
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <span class="stat-value" id="coinsPerClick">0</span>
+                        <span class="stat-label">per click</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="stat-box">
+                        <span class="stat-value" id="coinsPerSec">0</span>
+                        <span class="stat-label">per second</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="stat-box">
+                        <span class="stat-value" id="offlineRate">0</span>
+                        <span class="stat-label">offline / hr</span>
+                    </div>
                 </div>
-                <div class="main-actions">
-                    <button id="goto-images-btn" class="main-action-btn">🎨 Images</button>
-                </div>
+
                 <div class="clicker-zone">
                     <div id="clickImage" class="click-image"></div>
+                    <button id="goto-images-btn" class="image-icon-btn">🎨</button>
                 </div>
             </section>
 
@@ -65,8 +74,10 @@
                         Tasks</button>
                     <button class="sub-tab-link" onclick="openSubTab(event, 'achievements-content')">Completed</button>
                 </div>
-                <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
-                <div id="achievements-content" class="sub-tab-content achievements-list"></div>
+                <div class="tasks-container">
+                    <div id="tasks-content" class="sub-tab-content active achievements-list"></div>
+                    <div id="achievements-content" class="sub-tab-content achievements-list"></div>
+                </div>
             </section>
             <section id="images" class="page">
                 <h1 class="page-title">🎨 Coin Images</h1>
@@ -100,7 +111,7 @@
         </div>
     </div>
 
-    <!-- Corrected 5-Button Navigation Bar -->
+    <!-- 5-Button Navigation Bar -->
     <nav class="bottom-nav">
         <button id="nav-upgrade" class="nav-btn"><span class="nav-icon">⚡️</span><span
                 class="nav-text">Upgrades</span></button>

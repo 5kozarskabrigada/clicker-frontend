@@ -145,7 +145,7 @@ function updateUI() {
     coinsEl.textContent = formatCoins(userData.coins);
     coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
     coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
-    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour) + ' / hr';
+    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour);
     for (const type in upgrades) {
         upgrades[type].forEach(upgrade => {
             const levelEl = document.getElementById(`${upgrade.id}_level`);
@@ -209,9 +209,9 @@ async function handleTransfer() {
 
 // --- Page-Specific Loaders ---
 async function loadTopPlayers(sortBy = 'coins') {
+    const topListEl = document.getElementById('topList');
+    topListEl.innerHTML = '<li>Loading...</li>';
     try {
-        const topListEl = document.getElementById('topList');
-        topListEl.innerHTML = '<li>Loading...</li>';
         const players = await apiRequest(`/top?sortBy=${sortBy}`);
         topListEl.innerHTML = '';
         players.forEach((player, idx) => {
@@ -226,6 +226,8 @@ async function loadTopPlayers(sortBy = 'coins') {
 
 async function loadImages() {
     const container = document.getElementById('imagesContainer');
+    container.innerHTML = '<p class="empty-state">Loading images...</p>';
+    if (!gameData || !gameData.images) return;
     container.innerHTML = '';
     gameData.images.forEach(image => {
         const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
@@ -240,7 +242,7 @@ async function loadImages() {
         } else if (image.cost > 0) {
             buttonHtml = `<button class="action-button" onclick="buyImage(${image.id}, ${image.cost})" ${userData.coins < image.cost ? 'disabled' : ''}>Buy: ${formatCoins(image.cost)}</button>`;
         } else {
-            buttonHtml = `<button class="action-button" disabled>Locked by Task</button>`;
+            buttonHtml = `<button class="action-button" disabled>Locked</button>`;
         }
         card.innerHTML = `<div class="image-preview" style="background-image: url('${image.image_url}')"></div><div class="image-info"><h3>${image.name}</h3><p>${image.description || ''}</p>${buttonHtml}</div>`;
         container.appendChild(card);
@@ -323,7 +325,13 @@ function loadAchievements() {
     let completedAchievementsFound = false;
     gameData.tasks.forEach(task => {
         const isCompleted = userProgress.completed_task_ids && userProgress.completed_task_ids.includes(task.id);
-        const cardHtml = `<div class="achievement-card ${isCompleted ? 'unlocked' : ''}"><div class="achievement-icon">${isCompleted ? '✅' : '🎯'}</div><div class="achievement-content"><h3>${task.name}</h3><p>${task.description}</p></div></div>`;
+        let progressHtml = '';
+        if (!isCompleted && task.task_type.startsWith('total_')) {
+            const currentProgress = userData[task.task_type] || 0;
+            const percentage = Math.min(100, (currentProgress / task.threshold) * 100);
+            progressHtml = `<div class="progress-bar-container"><div class="progress-bar" style="width: ${percentage}%"></div></div>`;
+        }
+        const cardHtml = `<div class="achievement-card ${isCompleted ? 'unlocked' : ''}"><div class="achievement-icon">${isCompleted ? '✅' : '🎯'}</div><div class="achievement-content"><h3>${task.name}</h3><p>${task.description}</p>${progressHtml}</div></div>`;
         if (isCompleted) {
             achievementsContainer.innerHTML += cardHtml;
             completedAchievementsFound = true;

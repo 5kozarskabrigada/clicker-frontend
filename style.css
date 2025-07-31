@@ -1,15 +1,17 @@
 :root {
     font-size: 14px;
-    --bg-primary: #121212;
-    --bg-surface: #1e1e1e;
+    --bg-primary: #0d0e12;
+    --bg-surface: rgba(28, 30, 39, 0.7);
+    --bg-surface-solid: #1c1e27;
     --bg-surface-light: #2a2a2a;
     --primary-accent: #8A63F2;
-    --text-primary: #EAEAEA;
-    --text-secondary: #9E9E9E;
+    --primary-accent-glow: rgba(138, 99, 242, 0.3);
+    --text-primary: #f0f0f0;
+    --text-secondary: #8a8f98;
     --gold: #FFD700;
     --success: #4CAF50;
     --error: #F44336;
-    --border-color: #333333;
+    --border-color: rgba(138, 143, 152, 0.2);
     --border-radius: 1rem;
     --font-family: 'Inter', sans-serif;
     color-scheme: dark;
@@ -43,7 +45,7 @@ body {
 .app-content {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 1.25rem 1.25rem 6.25rem 1.25rem;
+    padding: 1rem 1rem 6rem 1rem;
 }
 
 .app-content::-webkit-scrollbar {
@@ -119,44 +121,54 @@ body {
     justify-content: center;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .coin-icon {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
 }
 
 .total-coins-value {
-    font-size: 1.575rem;
+    font-size: 2rem;
     font-weight: 800;
     word-break: break-all;
 }
 
-.stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
     margin: 0 auto 1.5rem auto;
-    max-width: 20rem;
+    max-width: 22rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
-.stat-item {
+.stat-box {
     text-align: center;
-}
-
-.stat-item.full-width {
-    grid-column: 1 / -1;
-}
-
-.stat-label {
-    font-size: 0.8125rem;
-    color: var(--text-secondary);
+    flex-grow: 1;
 }
 
 .stat-value {
-    font-size: 0.875rem;
+    font-size: 1.1rem;
     font-weight: 700;
+    display: block;
+    word-wrap: break-word;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.divider {
+    width: 1px;
+    background: var(--border-color);
 }
 
 .main-actions {
@@ -167,7 +179,7 @@ body {
 }
 
 .main-action-btn {
-    background: var(--bg-surface);
+    background: var(--bg-surface-solid);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     padding: 0.75rem 1.5rem;
@@ -184,24 +196,43 @@ body {
 }
 
 .clicker-zone {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 1rem;
 }
 
 .click-image {
-    width: 15.625rem;
-    height: 15.625rem;
+    width: 16rem;
+    height: 16rem;
     border-radius: 50%;
     background-size: cover;
     background-position: center;
     cursor: pointer;
     transition: transform 0.1s ease-out;
+    box-shadow: 0 0 20px var(--primary-accent-glow), 0 0 40px var(--primary-accent-glow);
     background-image: url('https://i1.sndcdn.com/avatars-zAo5N9j7XXVVwKPC-6lrkmw-t1080x1080.jpg');
 }
 
 .click-image:active {
     transform: scale(0.95);
+}
+
+.image-icon-btn {
+    position: absolute;
+    bottom: 0;
+    right: 1rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 /* Tabs (Upgrades, Top, Tasks) */
@@ -220,7 +251,7 @@ body {
 .sub-tab-link {
     padding: 0.625rem 1rem;
     border: 1px solid var(--border-color);
-    background: var(--bg-surface);
+    background: var(--bg-surface-solid);
     color: var(--text-secondary);
     border-radius: 0.75rem;
     font-weight: 600;
@@ -240,7 +271,7 @@ body {
 .sub-tab-content {
     display: none;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .upgrade-tab-content.active,
@@ -257,16 +288,18 @@ body {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 1rem;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .upgrade-icon {
-    font-size: 1.75rem;
-    width: 3.125rem;
-    height: 3.125rem;
+    font-size: 1.5rem;
+    width: 3rem;
+    height: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-surface-light);
+    background: var(--bg-surface-solid);
     border-radius: 0.75rem;
     flex-shrink: 0;
 }
@@ -276,12 +309,13 @@ body {
 }
 
 .upgrade-details h3 {
-    font-size: 1.0625rem;
+    font-size: 1rem;
+    font-weight: 600;
     margin: 0 0 0.25rem;
 }
 
 .upgrade-details p {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin: 0;
 }
@@ -383,6 +417,8 @@ input[type="number"] {
     align-items: center;
     gap: 1rem;
     border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .rank {
@@ -428,7 +464,7 @@ input[type="number"] {
 }
 
 .achievement-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
 }
 
 .achievement-content {
@@ -439,19 +475,37 @@ input[type="number"] {
     border-left: 4px solid var(--gold);
 }
 
+.progress-bar-container {
+    width: 100%;
+    background: var(--bg-primary);
+    border-radius: 1rem;
+    height: 0.5rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--primary-accent);
+    border-radius: 1rem;
+}
+
 /* Bottom Navigation */
 .bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 4.375rem;
-    background: #181818;
+    height: auto;
+    background: rgba(18, 18, 18, 0.7);
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding: 0.5rem 0;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border-color);
     z-index: 100;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .nav-btn {
@@ -468,12 +522,12 @@ input[type="number"] {
 }
 
 .nav-btn .nav-icon {
-    font-size: 1.375rem;
+    font-size: 1.5rem;
 }
 
 .nav-btn .nav-text {
-    font-size: 0.6875rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 500;
 }
 
 .nav-btn.active {
@@ -566,4 +620,11 @@ input[type="number"] {
     text-align: center;
     color: var(--text-secondary);
     padding: 2rem;
+}
+
+.tasks-container {
+    background: var(--bg-surface-solid);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
 }
