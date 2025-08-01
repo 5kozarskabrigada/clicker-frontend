@@ -22,9 +22,13 @@
             <section id="main" class="page active">
                 <div class="game-area">
             
-                    <div id="clickImage" class="character-background"
+                    <div class="character-background"
                         style="background-image: url('https://rare-gallery.com/uploads/posts/1198203-anime-anime-girls-digital-art-artwork-2D-portrait-display.png');">
                     </div>
+            
+                    <div id="click-effect-container"></div>
+            
+                    <div id="clickImage" class="clickable-area"></div>
             
                     <div class="stats-overlay">
                         <div class="total-coins-display">
@@ -32,8 +36,9 @@
                             <span id="coins" class="total-coins-value">0.000000000</span>
                         </div>
                         <div class="sub-stats-display">
-                            <div class="sub-stat">Per Click: <span id="coinsPerClick">0</span></div>
-                            <div class="sub-stat">Per Second: <span id="coinsPerSec">0</span></div>
+                            <div class="sub-stat">PER CLICK <span id="coinsPerClick">0</span></div>
+                            <div class="sub-stat-divider"></div>
+                            <div class="sub-stat">PER SECOND <span id="coinsPerSec">0</span></div>
                         </div>
                     </div>
             

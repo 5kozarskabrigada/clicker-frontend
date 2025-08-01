@@ -163,16 +163,31 @@ function updateUI() {
     }
 }
 
+
 clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
-    tg.HapticFeedback.impactOccurred('light');
 
+    const effectContainer = document.getElementById('click-effect-container');
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+
+    const rect = effectContainer.getBoundingClientRect();
+    ripple.style.left = `${event.clientX - rect.left}px`;
+    ripple.style.top = `${event.clientY - rect.top}px`;
+
+    effectContainer.appendChild(ripple);
+
+    ripple.addEventListener('animationend', () => {
+        ripple.remove();
+    });
+
+    tg.HapticFeedback.impactOccurred('light');
     userData.coins += userData.coins_per_click;
     updateUI();
     clickBuffer++;
 
-    clickImage.style.transform = 'scale(0.95)';
-    setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
+    clearTimeout(window.clickDebounce);
+    window.clickDebounce = setTimeout(syncClicks, 1000);
 };
 
 
