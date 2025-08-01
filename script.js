@@ -214,6 +214,43 @@ async function syncClicks() {
     }
 }
 
+
+document.addEventListener('DOMContentLoaded', function () {
+    const clickImage = document.getElementById('clickImage');
+
+    if (clickImage) {
+        clickImage.onclick = (event) => {
+            if (!userData || !userData.coins_per_click) return;
+
+            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+                Telegram.WebApp.HapticFeedback.impactOccurred('light');
+            }
+
+            const clickAmount = userData.coins_per_click;
+            userData.coins += clickAmount;
+            updateUI();
+            clickBuffer++;
+
+            clickImage.style.transform = 'scale(0.95)';
+            setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
+
+            const rect = clickImage.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
+
+            if (!clickSyncTimeout) {
+                clickSyncTimeout = setTimeout(() => {
+                    syncClicks();
+                    clickSyncTimeout = null;
+                }, 1000);
+            }
+        };
+    } else {
+        console.error('Clickable area element not found');
+    }
+});
+
 async function purchaseUpgrade(upgradeId) {
     await syncClicks(); 
     try {
@@ -687,6 +724,13 @@ function setupEventListeners() {
 
     setInterval(syncClicks, 5000);
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    tg.ready();
+    setupEventListeners();
+    init();
+    showPage('main');
+});
 
 
 tg.ready();
