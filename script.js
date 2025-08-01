@@ -561,15 +561,15 @@ function showNotification(message, type = 'info') {
     }, 4000)
 }
 
-function showFloatingCoin(x, y, amount) {
-    const coin = document.createElement('div');
-    coin.className = 'floating-coin';
-    coin.textContent = amount;
-    coin.style.left = `${x}px`;
-    coin.style.top = `${y}px`;
-    document.body.appendChild(coin);
-    setTimeout(() => coin.remove(), 1000);
-}
+// function showFloatingCoin(x, y, amount) {
+//     const coin = document.createElement('div');
+//     coin.className = 'floating-coin';
+//     coin.textContent = amount;
+//     coin.style.left = `${x}px`;
+//     coin.style.top = `${y}px`;
+//     document.body.appendChild(coin);
+//     setTimeout(() => coin.remove(), 1000);
+// }
 
 
 function animationLoop() {
@@ -693,7 +693,7 @@ function setupEventListeners() {
             clickBuffer++;
 
             if (characterBackgroundEl) {
-                characterBackgroundEl.style.transform = 'scale(1.02)';
+                characterBackgroundEl.style.transform = 'scale(1.04)';
                 setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
             }
 
