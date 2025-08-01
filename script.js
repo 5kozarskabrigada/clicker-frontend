@@ -11,8 +11,10 @@ let lastClickTime = 0;
 let activeIncomeInterval = null;
 
 
-let clickBuffer = 0;
+let clickBuffer = [];
 let isSyncing = false;
+let lastSyncTime = 0;
+const SYNC_INTERVAL = 2000; 
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -191,24 +193,26 @@ clickImage.onclick = (event) => {
 let clickSyncTimeout = null;
 
 async function syncClicks() {
-    if (clickBuffer === 0 || isSyncing) return;
+    if (clickBuffer.length === 0 || isSyncing) return;
 
     isSyncing = true;
-    const clicksToSend = clickBuffer;
-    clickBuffer = 0;
+    const clicksToSend = [...clickBuffer];
+    clickBuffer = [];
 
     try {
-        const updatedUser = await apiRequest('/click', 'POST', {
-            clicks: clicksToSend,
-            coins: userData.coins 
+        const response = await apiRequest('/click', 'POST', {
+            clicks: clicksToSend.map(click => click.amount),
+            totalClicks: clicksToSend.length,
+            coins: userData.coins
         });
-        userData = updatedUser;
+
+        userData = response.updatedUser || userData;
         updateUI();
+        lastSyncTime = Date.now();
     } catch (err) {
         console.error("Click sync failed, returning clicks to buffer:", err);
-        clickBuffer += clicksToSend;
-        userData.coins -= clicksToSend * userData.coins_per_click;
-        updateUI();
+
+        clickBuffer = [...clicksToSend, ...clickBuffer];
     } finally {
         isSyncing = false;
     }
@@ -229,27 +233,30 @@ document.addEventListener('DOMContentLoaded', function () {
             const clickAmount = userData.coins_per_click;
             userData.coins += clickAmount;
             updateUI();
-            clickBuffer++;
+
+            clickBuffer.push({
+                amount: clickAmount,
+                timestamp: Date.now()
+            });
 
             clickImage.style.transform = 'scale(0.95)';
             setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
 
-            const rect = clickImage.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
-
-            if (!clickSyncTimeout) {
-                clickSyncTimeout = setTimeout(() => {
-                    syncClicks();
-                    clickSyncTimeout = null;
-                }, 1000);
+            if (!isSyncing && Date.now() - lastSyncTime > SYNC_INTERVAL) {
+                syncClicks();
             }
         };
     } else {
         console.error('Clickable area element not found');
     }
+
+    setInterval(() => {
+        if (clickBuffer.length > 0 && !isSyncing) {
+            syncClicks();
+        }
+    }, SYNC_INTERVAL);
 });
+
 
 async function purchaseUpgrade(upgradeId) {
     await syncClicks(); 
@@ -604,28 +611,21 @@ async function init() {
     generateUpgradeHTML();
 
     try {
-        loadPendingClicks();
+        const [userDataRes, gameDataRes, progressRes] = await Promise.all([
+            apiRequest('/user'),
+            apiRequest('/game-data'),
+            apiRequest('/user-progress')
+        ]);
 
-        const data = await apiRequest('/user');
-        userData = data.user;
-
-        const earnings = data.earnings;
-        if (earnings && earnings.earned_passive > 0) {
-            setTimeout(() => {
-                showNotification(`Welcome back! You earned ${formatCoins(earnings.earned_passive)} while offline.`, 'success');
-            }, 600);
-        }
-
-        const gamedata = await apiRequest('/game-data');
-        gameData = gamedata;
-        const progress = await apiRequest('/user-progress');
-        userProgress = progress;
+        userData = userDataRes.user;
+        gameData = gameDataRes;
+        userProgress = progressRes;
 
         updateUI();
 
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
         if (equippedImage) {
-            clickImage.style.backgroundImage = `url('${equippedImage.image_url}')`;
+            document.querySelector('.character-background').style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
         startPassiveIncome();
@@ -635,16 +635,15 @@ async function init() {
         }, 300);
 
     } catch (e) {
-        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>${e.message || 'Please try again'}</small>`;
         console.error("Initialization failed:", e);
-
-        const retryBtn = document.createElement('button');
-        retryBtn.textContent = 'Retry';
-        retryBtn.className = 'action-button';
-        retryBtn.style.marginTop = '1rem';
-        retryBtn.onclick = init;
-        document.getElementById('loading-text').appendChild(document.createElement('br'));
-        document.getElementById('loading-text').appendChild(retryBtn);
+        document.getElementById('loading-text').innerHTML = `
+            Connection Error<br/>
+            <small>${e.message || 'Please try again'}</small>
+            <br/>
+            <button class="action-button" onclick="init()" style="margin-top:1rem;">
+                Retry
+            </button>
+        `;
     }
 }
 
