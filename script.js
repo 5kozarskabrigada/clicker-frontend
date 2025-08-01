@@ -567,7 +567,6 @@ async function init() {
     generateUpgradeHTML();
 
     try {
-
         loadPendingClicks();
 
         const data = await apiRequest('/user');
@@ -594,11 +593,21 @@ async function init() {
 
         startPassiveIncome();
 
-        loadingOverlay.classList.remove('active');
+        setTimeout(() => {
+            loadingOverlay.classList.add('hidden');
+        }, 300);
 
     } catch (e) {
-        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>Please try again.</small>`;
+        document.getElementById('loading-text').innerHTML = `Connection Error<br/><small>${e.message || 'Please try again'}</small>`;
         console.error("Initialization failed:", e);
+
+        const retryBtn = document.createElement('button');
+        retryBtn.textContent = 'Retry';
+        retryBtn.className = 'action-button';
+        retryBtn.style.marginTop = '1rem';
+        retryBtn.onclick = init;
+        document.getElementById('loading-text').appendChild(document.createElement('br'));
+        document.getElementById('loading-text').appendChild(retryBtn);
     }
 }
 
