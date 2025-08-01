@@ -19,33 +19,28 @@
     <div id="app">
         <div class="app-content">
 
-        <section id="main" class="page active">
-
-            <div class="game-area">
-
-
-                <div id="clickImage" class="character-image" style="background-image: url('https://rare-gallery.com/uploads/posts/1198203-anime-anime-girls-digital-art-artwork-2D-portrait-display.png');"></div>
-
-                <div class="stats-overlay">
-
-
-                    <div class="total-coins-display">
-                        <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
-                        <span id="coins" class="total-coins-value">0.000000000</span>
+            <section id="main" class="page active">
+                <div class="game-area">
+            
+                    <div id="clickImage" class="character-background"
+                        style="background-image: url('https://rare-gallery.com/uploads/posts/1198203-anime-anime-girls-digital-art-artwork-2D-portrait-display.png');">
                     </div>
-
-                    <div class="sub-stats-display">
-                        <div class="sub-stat"><span id="coinsPerClick">0</span>/click</div>
-                        <div class="sub-stat"><span id="coinsPerSec">0</span>/sec</div>
+            
+                    <div class="stats-overlay">
+                        <div class="total-coins-display">
+                            <img src="https://pngimg.com/d/coin_PNG36871.png" alt="Coin" class="coin-icon">
+                            <span id="coins" class="total-coins-value">0.000000000</span>
+                        </div>
+                        <div class="sub-stats-display">
+                            <div class="sub-stat">Per Click: <span id="coinsPerClick">0</span></div>
+                            <div class="sub-stat">Per Second: <span id="coinsPerSec">0</span></div>
+                        </div>
                     </div>
-
+            
+                    <button id="goto-images-btn" class="image-icon-btn">🎨</button>
                 </div>
-
-                <button id="goto-images-btn" class="image-icon-btn">🎨</button>
-            </div>
-        </section>
-
-
+            </section>
+ 
 
             <section id="upgrade" class="page">
                 <h1 class="page-title">⚙️ Upgrades</h1>

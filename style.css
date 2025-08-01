@@ -129,6 +129,11 @@ body {
     border-radius: 3px;
 }
 
+#main.page.active {
+    margin: -1rem -1rem -6rem -1rem;
+    height: 100%;
+}
+
 .main-header,
 .total-coins-container,
 .simple-stats,
@@ -162,26 +167,28 @@ body {
 .game-area {
     position: relative;
     width: 100%;
-    max-width: 450px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    height: 100%;
+    overflow: hidden;
 }
 
-.character-image {
+.character-background {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    padding-top: 125%;
-    background-size: contain;
-    background-position: center bottom;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
     background-repeat: no-repeat;
     cursor: pointer;
     transition: transform 0.1s ease-out;
 }
 
-.character-image:active {
-    transform: scale(0.98);
+.character-background:active {
+    transform: scale(1.02);
 }
+
+
 
 .coin-icon {
     width: 2.5rem;
@@ -198,37 +205,45 @@ body {
 
 .stats-overlay {
     position: absolute;
-    top: 0;
+    bottom: 0;
     left: 0;
     right: 0;
-    padding: 2rem;
+    padding: 1rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color:#1a1923;   
+    background: linear-gradient(to top, rgba(13, 14, 18, 0.9) 0%, rgba(13, 14, 18, 0.7) 60%, transparent 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
     pointer-events: none;
-    border-top-left-radius: 1rem;
-    border-top-right-radius: 1rem;
 }
+
+
 .total-coins-display {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
 }
+
 
 .total-coins-display .coin-icon {
-    width: 2rem;
-    height: 2rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    filter: drop-shadow(0 0 8px var(--gold));
 }
 
+
 .total-coins-display .total-coins-value {
-    font-size: 1.75rem;
+    font-size: 2.5rem;
     font-weight: 800;
-    color: white;
-    text-shadow: 0 0 5px black;
+    color: var(--text-primary);
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
+
 
 .stats-container {
     display: flex;
@@ -357,15 +372,16 @@ body {
 
 .sub-stats-display {
     display: flex;
-    justify-content: center;
-    gap: 1.5rem;
+    gap: 2rem;
+    background: var(--bg-surface-solid);
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-sm);
 }
 
 .sub-stat {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    font-weight: 600;
-    text-shadow: 0 0 3px black;
+    font-weight: 500;
 }
 
 .sub-stat span {
@@ -375,9 +391,11 @@ body {
 
 .game-area>.image-icon-btn {
     position: absolute;
-    bottom: 1rem;
+    top: 1rem;
     right: 1rem;
     z-index: 10;
+    background: var(--bg-surface);
+    border-color: var(--border-color);
 }
 
 .upgrade-tab-link,
