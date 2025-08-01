@@ -22,6 +22,7 @@ const coinsPerClickEl = document.getElementById('coinsPerClick');
 const clickImage = document.getElementById('clickImage');
 const offlineRateEl = document.getElementById('offlineRate');
 const notificationContainer = document.getElementById('notificationContainer');
+const characterBackgroundEl = document.querySelector('.character-background');
 
 const pages = {
     main: document.getElementById('main'),
@@ -36,6 +37,7 @@ const navButtons = {
     main: document.getElementById('nav-main'),
     upgrade: document.getElementById('nav-upgrade'),
     tasks: document.getElementById('nav-tasks'),
+    images: document.getElementById('nav-images'),
     top: document.getElementById('nav-top'),
     transfer: document.getElementById('nav-transfer'),
 };
@@ -165,7 +167,7 @@ function updateUI() {
     }
 }
 
-clickImage.onclick = (event) => {
+clickImage.onclick = () => { 
     if (!userData || !userData.coins_per_click) return;
     tg.HapticFeedback.impactOccurred('light');
 
@@ -174,8 +176,10 @@ clickImage.onclick = (event) => {
     updateUI();
     clickBuffer++;
 
-    clickImage.style.transform = 'scale(0.95)';
-    setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
+    if (characterBackgroundEl) {
+        characterBackgroundEl.style.transform = 'scale(1.02)';
+        setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
+    }
 
     const rect = clickImage.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
