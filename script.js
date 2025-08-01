@@ -163,49 +163,52 @@ function updateUI() {
     }
 }
 
-
 clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
-
-    const effectContainer = document.getElementById('click-effect-container');
-    const ripple = document.createElement('div');
-    ripple.className = 'click-ripple';
-
-    const rect = effectContainer.getBoundingClientRect();
-    ripple.style.left = `${event.clientX - rect.left}px`;
-    ripple.style.top = `${event.clientY - rect.top}px`;
-
-    effectContainer.appendChild(ripple);
-
-    ripple.addEventListener('animationend', () => {
-        ripple.remove();
-    });
-
     tg.HapticFeedback.impactOccurred('light');
-    userData.coins += userData.coins_per_click;
+
+    const clickAmount = userData.coins_per_click;
+    userData.coins += clickAmount;
     updateUI();
     clickBuffer++;
 
-    clearTimeout(window.clickDebounce);
-    window.clickDebounce = setTimeout(syncClicks, 1000);
+    clickImage.style.transform = 'scale(0.95)';
+    setTimeout(() => { clickImage.style.transform = 'scale(1)'; }, 100);
+
+    const rect = clickImage.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
+
+    if (!clickSyncTimeout) {
+        clickSyncTimeout = setTimeout(() => {
+            syncClicks();
+            clickSyncTimeout = null;
+        }, 1000);
+    }
 };
 
+let clickSyncTimeout = null;
 
 async function syncClicks() {
-    if (clickBuffer === 0 || isSyncing) {
-        return;
-    }
+    if (clickBuffer === 0 || isSyncing) return;
+
     isSyncing = true;
     const clicksToSend = clickBuffer;
-    clickBuffer = 0; 
+    clickBuffer = 0;
 
     try {
-        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
-        userData = updatedUser; 
+        const updatedUser = await apiRequest('/click', 'POST', {
+            clicks: clicksToSend,
+            coins: userData.coins 
+        });
+        userData = updatedUser;
         updateUI();
     } catch (err) {
         console.error("Click sync failed, returning clicks to buffer:", err);
-        clickBuffer += clicksToSend; 
+        clickBuffer += clicksToSend;
+        userData.coins -= clicksToSend * userData.coins_per_click;
+        updateUI();
     } finally {
         isSyncing = false;
     }
