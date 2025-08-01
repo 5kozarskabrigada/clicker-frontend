@@ -615,28 +615,26 @@ async function init() {
     generateUpgradeHTML();
 
     try {
-        const [userDataRes, gameDataRes, progressRes] = await Promise.all([
-            apiRequest('/user'),
+        const userDataRes = await apiRequest('/user');
+        userData = userDataRes.user;
+
+        const [gameDataRes, progressRes] = await Promise.all([
             apiRequest('/game-data'),
             apiRequest('/user-progress')
         ]);
-
-        userData = userDataRes.user;
         gameData = gameDataRes;
         userProgress = progressRes;
 
         updateUI();
 
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-        if (equippedImage) {
-            document.querySelector('.character-background').style.backgroundImage = `url('${equippedImage.image_url}')`;
+        if (equippedImage && characterBackgroundEl) {
+            characterBackgroundEl.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
         startPassiveIncome();
 
-        setTimeout(() => {
-            loadingOverlay.classList.add('hidden');
-        }, 300);
+        loadingOverlay.classList.add('hidden');
 
     } catch (e) {
         console.error("Initialization failed:", e);
@@ -644,7 +642,7 @@ async function init() {
             Connection Error<br/>
             <small>${e.message || 'Please try again'}</small>
             <br/>
-            <button class="action-button" onclick="init()" style="margin-top:1rem;">
+            <button class="action-button" onclick="location.reload()" style="margin-top:1rem;">
                 Retry
             </button>
         `;
@@ -725,15 +723,17 @@ function setupEventListeners() {
         }
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+        tg.ready();
+        setupEventListeners();
+        init();
+        showPage('main');
+    });
+
+
     setInterval(syncClicks, 5000);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    tg.ready();
-    setupEventListeners();
-    init();
-    showPage('main');
-});
 
 
 tg.ready();

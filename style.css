@@ -1,16 +1,16 @@
 :root {
     font-size: 14px;
-    --bg-primary: #0d1117;
-    --bg-surface: rgba(13, 17, 23, 0.7);
-    --bg-surface-solid: #161b22;
-    --bg-surface-light: #21262d;
-    --primary-accent: #22a0f3;
-    --primary-accent-glow: rgba(34, 160, 243, 0.3);
+    --bg-primary: #0f0d17;
+    --bg-surface: rgba(15, 13, 23, 0.7);
+    --bg-surface-solid: #171622;
+    --bg-surface-light: #22212d;
+    --primary-accent: #7622f3;
+    --primary-accent-glow: rgba(62, 34, 243, 0.3);
     --text-primary: #e6edf3;
     --text-secondary: #8b949e;
     --success: #238636;
     --error: #da3633;
-    --border-color: rgba(240, 246, 252, 0.1);
+    --border-color: rgba(243, 240, 252, 0.1);
     --border-radius: 1rem;
     --border-radius-sm: 0.75rem;
     --font-family: 'Inter', sans-serif;
