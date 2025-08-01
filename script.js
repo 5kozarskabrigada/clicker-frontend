@@ -11,10 +11,10 @@ let lastClickTime = 0;
 let activeIncomeInterval = null;
 
 
-let clickBuffer = [];
+let clickBuffer = 0;
 let isSyncing = false;
-let lastSyncTime = 0;
-const SYNC_INTERVAL = 2000; 
+let clickSyncTimeout = null;
+const SYNC_INTERVAL = 2000;
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -194,29 +194,21 @@ clickImage.onclick = () => {
     }
 };
 
-let clickSyncTimeout = null;
 
 async function syncClicks() {
-    if (clickBuffer.length === 0 || isSyncing) return;
+    if (clickBuffer === 0 || isSyncing) return;
 
     isSyncing = true;
-    const clicksToSend = [...clickBuffer];
-    clickBuffer = [];
+    const clicksToSend = clickBuffer;
+    clickBuffer = 0; 
 
     try {
-        const response = await apiRequest('/click', 'POST', {
-            clicks: clicksToSend.map(click => click.amount),
-            totalClicks: clicksToSend.length,
-            coins: userData.coins
-        });
-
+        const response = await apiRequest('/click', 'POST', { totalClicks: clicksToSend });
         userData = response.updatedUser || userData;
         updateUI();
-        lastSyncTime = Date.now();
     } catch (err) {
         console.error("Click sync failed, returning clicks to buffer:", err);
-
-        clickBuffer = [...clicksToSend, ...clickBuffer];
+        clickBuffer += clicksToSend; 
     } finally {
         isSyncing = false;
     }
@@ -277,6 +269,8 @@ async function purchaseUpgrade(upgradeId) {
         tg.HapticFeedback.notificationOccurred('error');
     }
 }
+
+
 async function handleTransfer() {
     const transferUsernameEl = document.getElementById('transferUsername');
     const transferAmountEl = document.getElementById('transferAmount');
@@ -294,21 +288,11 @@ async function handleTransfer() {
         const result = await apiRequest('/transfer', 'POST', { toUsername, amount });
         userData = result.updatedSender;
         updateUI();
-
         transferMessageEl.textContent = result.message;
         transferMessageEl.className = 'transfer-message success';
         transferUsernameEl.value = '';
         transferAmountEl.value = '';
-
         loadHistory();
-
-        const transferBtn = document.getElementById('transferBtn');
-        transferBtn.style.transform = 'translateY(-3px)';
-        transferBtn.style.boxShadow = '0 5px 15px rgba(138, 99, 242, 0.4)';
-        setTimeout(() => {
-            transferBtn.style.transform = '';
-            transferBtn.style.boxShadow = '';
-        }, 300);
     } catch (e) {
         transferMessageEl.textContent = e.message;
         transferMessageEl.className = 'transfer-message error';
@@ -570,12 +554,11 @@ function showNotification(message, type = 'info') {
     notification.className = `notification ${type}`;
     notification.textContent = message;
     notificationContainer.appendChild(notification);
-
     setTimeout(() => { notification.classList.add('show'); }, 10);
     setTimeout(() => {
         notification.classList.remove('show');
         notification.addEventListener('transitionend', () => notification.remove());
-    }, 4000); 
+    }, 4000)
 }
 
 function showFloatingCoin(x, y, amount) {
@@ -584,24 +567,8 @@ function showFloatingCoin(x, y, amount) {
     coin.textContent = amount;
     coin.style.left = `${x}px`;
     coin.style.top = `${y}px`;
-
-
-    const animationDuration = 1000 + Math.random() * 500;
-    const endX = (Math.random() * 100) - 50;
-    const endY = -50 - (Math.random() * 50);
-
-    coin.style.setProperty('--end-x', `${endX}px`);
-    coin.style.setProperty('--end-y', `${endY}px`);
-    coin.style.setProperty('--duration', `${animationDuration}ms`);
-
     document.body.appendChild(coin);
-
-    setTimeout(() => {
-        coin.style.opacity = '1';
-        coin.style.transform = `translate(var(--end-x), var(--end-y))`;
-    }, 10);
-
-    setTimeout(() => coin.remove(), animationDuration);
+    setTimeout(() => coin.remove(), 1000);
 }
 
 
@@ -615,13 +582,13 @@ async function init() {
     generateUpgradeHTML();
 
     try {
-        const userDataRes = await apiRequest('/user');
-        userData = userDataRes.user;
-
-        const [gameDataRes, progressRes] = await Promise.all([
+        const [userDataRes, gameDataRes, progressRes] = await Promise.all([
+            apiRequest('/user'),
             apiRequest('/game-data'),
             apiRequest('/user-progress')
         ]);
+
+        userData = userDataRes.user;
         gameData = gameDataRes;
         userProgress = progressRes;
 
@@ -697,46 +664,62 @@ function openTopTab(event, sortBy) {
 }
 
 function startPassiveIncome() {
-    if (activeIncomeInterval) { 
-        clearInterval(activeIncomeInterval); 
-    }
+    clearInterval(activeIncomeInterval);
+
     if (userData && userData.coins_per_sec > 0) {
         activeIncomeInterval = setInterval(() => {
-
             userData.coins += (userData.coins_per_sec / 10);
             updateUI();
-
         }, 100);
     }
 }
 
 function setupEventListeners() {
+
     for (const key in navButtons) {
-        if (navButtons[key]) { navButtons[key].onclick = () => showPage(key); }
-    }
-    document.getElementById('goto-images-btn').onclick = () => showPage('images');
-    document.getElementById('transferBtn').onclick = handleTransfer;
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            savePendingClicks();
+        if (navButtons[key]) {
+            navButtons[key].onclick = () => showPage(key);
         }
-    });
+    }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        tg.ready();
-        setupEventListeners();
-        init();
-        showPage('main');
-    });
+    if (clickImage) {
+        clickImage.onclick = () => {
+            if (!userData || !userData.coins_per_click) return;
+            tg.HapticFeedback.impactOccurred('light');
 
+            const clickAmount = userData.coins_per_click;
+            userData.coins += clickAmount;
+            updateUI();
+            clickBuffer++;
 
-    setInterval(syncClicks, 5000);
+            if (characterBackgroundEl) {
+                characterBackgroundEl.style.transform = 'scale(1.02)';
+                setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
+            }
+
+            const rect = clickImage.getBoundingClientRect();
+            const x = rect.left + rect.width / 2;
+            const y = rect.top + rect.height / 2;
+            showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
+
+            clearTimeout(clickSyncTimeout);
+            clickSyncTimeout = setTimeout(syncClicks, SYNC_INTERVAL);
+        };
+    }
+
+    const transferBtn = document.getElementById('transferBtn');
+    if (transferBtn) {
+        transferBtn.onclick = handleTransfer;
+    }
 }
 
 
 
-tg.ready();
-setupEventListeners();
-init();
-showPage('main');
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    tg.ready();
+    setupEventListeners();
+    init();
+    showPage('main');
+});
