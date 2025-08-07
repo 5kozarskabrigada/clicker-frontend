@@ -15,9 +15,10 @@ let clickBuffer = 0;
 let lastClickTime = 0;
 let isSyncing = false;
 let clickSyncTimeout = null;
-const SYNC_INTERVAL = 1000; 
+const SYNC_INTERVAL = 1500; 
 const MAX_CLICKS_PER_SECOND = 25; 
 
+const cpsDisplay = document.getElementById('cps-display');
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
 const coinsPerClickEl = document.getElementById('coinsPerClick');
@@ -176,14 +177,15 @@ function handleUserClick(event) {
 
     const now = Date.now();
     if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) {
-        return;
+        return; 
     }
     lastClickTime = now;
+    clickTimestamps.push(now); 
 
     tg.HapticFeedback.impactOccurred('light');
 
     const clickAmount = userData.coins_per_click;
-    userData.coins += clickAmount;
+    userData.coins += clickAmount; 
     clickBuffer++;
     updateUI();
 
@@ -191,12 +193,13 @@ function handleUserClick(event) {
         characterBackgroundEl.style.transform = 'scale(1.02)';
         setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
     }
+
     const rect = clickImage.getBoundingClientRect();
     const x = event.clientX || (rect.left + rect.width / 2);
     const y = event.clientY || (rect.top + rect.height / 2);
     showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
 
-    clearTimeout(clickSyncTimeout); 
+    clearTimeout(clickSyncTimeout);
     clickSyncTimeout = setTimeout(syncClicks, SYNC_INTERVAL);
 }
 
@@ -242,10 +245,9 @@ clickImage.onclick = (event) => {
 
 async function syncClicks() {
     if (clickBuffer === 0 || isSyncing) return;
-
     isSyncing = true;
     const clicksToSend = clickBuffer;
-    clickBuffer = 0; 
+    clickBuffer = 0;
 
     try {
         const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
@@ -255,7 +257,7 @@ async function syncClicks() {
         }
     } catch (err) {
         console.error("Click sync failed, returning clicks to buffer:", err);
-        clickBuffer += clicksToSend; 
+        clickBuffer += clicksToSend;
     } finally {
         isSyncing = false;
     }
@@ -316,16 +318,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 async function purchaseUpgrade(upgradeId) {
-    await syncClicks(); 
+
+    await syncClicks();
+
     try {
         const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
-        userData = updatedUser;
+        userData = updatedUser; 
         updateUI();
         startPassiveIncome();
         showNotification('Upgrade successful!', 'success');
         tg.HapticFeedback.notificationOccurred('success');
         if (pages.top.classList.contains('active')) { loadTopPlayers(); }
-    } catch (e) {
+    } 
+    catch (e) {
         showNotification(e.message, 'error');
         tg.HapticFeedback.notificationOccurred('error');
     }
@@ -549,6 +554,18 @@ function renderHistory(filter = '') {
     });
 }
 
+
+async function claimTaskReward(taskId) {
+    try {
+        const updatedUser = await apiRequest(`/tasks/${taskId}/claim`, 'POST');
+        userData = updatedUser;
+        updateUI();
+        showNotification('Reward claimed!', 'success');
+        loadAchievements();
+    } catch (e) {
+    }
+}
+
 async function loadAchievements() {
     const tasksContainer = document.querySelector('.tasks-list');
     const achievementsContainer = document.querySelector('.achievements-list');
@@ -557,10 +574,11 @@ async function loadAchievements() {
     achievementsContainer.innerHTML = '<div class="loading-state">Loading achievements...</div>';
 
     try {
-        const [gameDataRes, userTasksRes] = await Promise.all([
-            apiRequest('/game-data'), 
-            apiRequest('/user-tasks')  
+        const [gameDataRes, userTasksRes, claimedTasksRes] = await Promise.all([
+            apiRequest('/game-data'),
+            apiRequest('/user-tasks'),
         ]);
+
 
         gameData.tasks = gameDataRes.tasks || [];
         const completedTaskIds = userTasksRes.filter(t => t.is_completed).map(t => t.task_id);
@@ -594,18 +612,30 @@ async function loadAchievements() {
 
         achievementsContainer.innerHTML = '';
         const completedTasks = gameData.tasks.filter(task => completedTaskIds.includes(task.id));
+
         if (completedTasks.length === 0) {
             achievementsContainer.innerHTML = '<div class="empty-state">No achievements yet!</div>';
         } else {
             completedTasks.forEach(task => {
                 const card = document.createElement('div');
                 card.className = 'achievement-card unlocked';
+
+                const isClaimed = userProgress.claimed_task_ids.includes(task.id);
+                let actionHtml = `<p class="completed-text">Completed!</p>`;
+                if (task.reward_amount > 0 && !isClaimed) {
+                    actionHtml = `<button class="action-button claim-button" onclick="claimTaskReward(${task.id})">
+                        Claim ${formatCoins(task.reward_amount, 0)} Coins
+                    </button>`;
+                } else if (task.reward_amount > 0 && isClaimed) {
+                    actionHtml = `<p class="completed-text">Reward Claimed</p>`;
+                }
+
                 card.innerHTML = `
                     <div class="achievement-icon">🏆</div>
                     <div class="achievement-content">
                         <h3>${task.name}</h3>
                         <p>${task.description}</p>
-                        <p class="completed-text">Completed!</p>
+                        ${actionHtml}
                     </div>
                 `;
                 achievementsContainer.appendChild(card);
@@ -647,6 +677,10 @@ function animationLoop() {
 
 
 async function init() {
+
+    const claimedTasks = await apiRequest('/tasks/claimed'); 
+    userProgress.claimed_task_ids = claimedTasks.map(t => t.task_id);
+
     const loadingOverlay = document.getElementById('loading-overlay');
     generateUpgradeHTML();
 
@@ -745,25 +779,30 @@ function startPassiveIncome() {
 
 function setupEventListeners() {
     for (const key in navButtons) {
-        if (navButtons[key]) {
-            navButtons[key].onclick = () => showPage(key);
-        }
+        navButtons[key].onclick = () => showPage(key);
     }
 
-    if (clickImage) {
-        clickImage.onclick = handleUserClick;
-    }
+    clickImage.onclick = handleUserClick;
 
-    const transferBtn = document.getElementById('transferBtn');
-    if (transferBtn) {
-        transferBtn.onclick = handleTransfer;
-    }
+    document.getElementById('transferBtn').onclick = handleTransfer;
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             syncClicks();
         }
     });
+
+
+    setInterval(() => {
+        const now = Date.now();
+
+        while (clickTimestamps.length > 0 && clickTimestamps[0] < now - 1000) {
+            clickTimestamps.shift();
+        }
+        if (cpsDisplay) {
+            cpsDisplay.textContent = `${clickTimestamps.length} Clicks/Sec`;
+        }
+    }, 1000);
 }
 
 
