@@ -396,8 +396,14 @@ async function loadImages(filter = 'all') {
     container.innerHTML = '<div class="loading-state">Loading images...</div>';
 
     try {
-        const { data: images } = await supabase.from('images').select('*');
-        gameData.images = images || [];
+        if (gameData.images.length === 0) {
+            const gameDataRes = await apiRequest('/game-data');
+            gameData.images = gameDataRes.images || [];
+        }
+        if (!userProgress.unlocked_image_ids) {
+            const progressRes = await apiRequest('/user-progress');
+            userProgress.unlocked_image_ids = progressRes.unlocked_image_ids || [];
+        }
 
         if (gameData.images.length === 0) {
             container.innerHTML = '<div class="empty-state">No images available</div>';
@@ -408,7 +414,6 @@ async function loadImages(filter = 'all') {
         gameData.images.forEach(image => {
             const isUnlocked = userProgress.unlocked_image_ids.includes(image.id);
             const isEquipped = userData.equipped_image_id === image.id;
-
 
             if (filter === 'unlocked' && !isUnlocked) return;
             if (filter === 'locked' && isUnlocked) return;
@@ -444,6 +449,7 @@ async function loadImages(filter = 'all') {
             container.innerHTML = `<div class="empty-state">No ${filter} images found</div>`;
         }
     } catch (e) {
+        console.error("Failed to load images:", e);
         container.innerHTML = '<div class="error-state">Failed to load images</div>';
     }
 }
@@ -763,8 +769,8 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
     tg.ready();
-    generateUpgradeHTML(); 
-    setupEventListeners();
+    generateUpgradeHTML();
+    setupEventListeners(); 
     init();
     showPage('main');
 });
