@@ -11,10 +11,14 @@ let lastClickTime = 0;
 let activeIncomeInterval = null;
 
 
-let clickBuffer = 0;
-let isSyncing = false;
+
 let clickSyncTimeout = null;
-const SYNC_INTERVAL = 2000;
+
+let clickBuffer = 0;
+let lastSyncTime = 0;
+const SYNC_INTERVAL = 2000; 
+let isSyncing = false;
+const MAX_CLICKS_PER_SECOND = 20;
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -167,14 +171,29 @@ function updateUI() {
     }
 }
 
-clickImage.onclick = () => { 
+clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
-    tg.HapticFeedback.impactOccurred('light');
+
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTime;
+    lastClickTime = now;
+
+
+    if (timeSinceLastClick < 1000 / MAX_CLICKS_PER_SECOND) {
+
+        console.warn("Clicking too fast!");
+        return;
+    }
+
+
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+        Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
 
     const clickAmount = userData.coins_per_click;
     userData.coins += clickAmount;
-    updateUI();
     clickBuffer++;
+    updateUI();
 
     if (characterBackgroundEl) {
         characterBackgroundEl.style.transform = 'scale(1.02)';
@@ -186,11 +205,8 @@ clickImage.onclick = () => {
     const y = rect.top + rect.height / 2;
     showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
 
-    if (!clickSyncTimeout) {
-        clickSyncTimeout = setTimeout(() => {
-            syncClicks();
-            clickSyncTimeout = null;
-        }, 1000);
+    if (!isSyncing && Date.now() - lastSyncTime > SYNC_INTERVAL) {
+        syncClicks();
     }
 };
 
@@ -199,13 +215,16 @@ async function syncClicks() {
     if (clickBuffer === 0 || isSyncing) return;
 
     isSyncing = true;
+    lastSyncTime = Date.now();
     const clicksToSend = clickBuffer;
-    clickBuffer = 0; 
+    clickBuffer = 0;
 
     try {
-        const response = await apiRequest('/click', 'POST', { totalClicks: clicksToSend });
-        userData = response.updatedUser || userData;
-        updateUI();
+        const response = await apiRequest('/click', 'POST', { clicks: clicksToSend });
+        if (response) {
+            userData = response;
+            updateUI();
+        }
     } catch (err) {
         console.error("Click sync failed, returning clicks to buffer:", err);
         clickBuffer += clicksToSend; 
@@ -214,6 +233,19 @@ async function syncClicks() {
     }
 }
 
+
+setInterval(() => {
+    if (clickBuffer > 0 && !isSyncing) {
+        syncClicks();
+    }
+}, SYNC_INTERVAL);
+
+
+window.addEventListener('beforeunload', () => {
+    if (clickBuffer > 0) {
+        syncClicks();
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function () {
     const clickImage = document.getElementById('clickImage');
