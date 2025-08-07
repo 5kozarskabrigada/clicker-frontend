@@ -7,18 +7,16 @@ let userData = null;
 let gameData = { images: [], tasks: [] };
 let userProgress = { unlocked_image_ids: [] };
 let transactionHistory = [];
-let lastClickTime = 0;
 let activeIncomeInterval = null;
 
 
 
-let clickSyncTimeout = null;
-
 let clickBuffer = 0;
-let lastSyncTime = 0;
-const SYNC_INTERVAL = 2000; 
+let lastClickTime = 0;
 let isSyncing = false;
-const MAX_CLICKS_PER_SECOND = 20;
+let clickSyncTimeout = null;
+const SYNC_INTERVAL = 1000; 
+const MAX_CLICKS_PER_SECOND = 25; 
 
 const coinsEl = document.getElementById('coins');
 const coinsPerSecEl = document.getElementById('coinsPerSec');
@@ -171,6 +169,37 @@ function updateUI() {
     }
 }
 
+
+
+function handleUserClick(event) {
+    if (!userData || !userData.coins_per_click) return;
+
+    const now = Date.now();
+    if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) {
+        return;
+    }
+    lastClickTime = now;
+
+    tg.HapticFeedback.impactOccurred('light');
+
+    const clickAmount = userData.coins_per_click;
+    userData.coins += clickAmount;
+    clickBuffer++;
+    updateUI();
+
+    if (characterBackgroundEl) {
+        characterBackgroundEl.style.transform = 'scale(1.02)';
+        setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
+    }
+    const rect = clickImage.getBoundingClientRect();
+    const x = event.clientX || (rect.left + rect.width / 2);
+    const y = event.clientY || (rect.top + rect.height / 2);
+    showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
+
+    clearTimeout(clickSyncTimeout); 
+    clickSyncTimeout = setTimeout(syncClicks, SYNC_INTERVAL);
+}
+
 clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
 
@@ -215,14 +244,13 @@ async function syncClicks() {
     if (clickBuffer === 0 || isSyncing) return;
 
     isSyncing = true;
-    lastSyncTime = Date.now();
     const clicksToSend = clickBuffer;
-    clickBuffer = 0;
+    clickBuffer = 0; 
 
     try {
-        const response = await apiRequest('/click', 'POST', { clicks: clicksToSend });
-        if (response) {
-            userData = response;
+        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
+        if (updatedUser) {
+            userData = updatedUser;
             updateUI();
         }
     } catch (err) {
@@ -232,6 +260,7 @@ async function syncClicks() {
         isSyncing = false;
     }
 }
+
 
 
 setInterval(() => {
@@ -304,6 +333,7 @@ async function purchaseUpgrade(upgradeId) {
 
 
 async function handleTransfer() {
+    await syncClicks(); 
     const transferUsernameEl = document.getElementById('transferUsername');
     const transferAmountEl = document.getElementById('transferAmount');
     const transferMessageEl = document.getElementById('transferMessage');
@@ -521,22 +551,24 @@ async function loadAchievements() {
     achievementsContainer.innerHTML = '<div class="loading-state">Loading achievements...</div>';
 
     try {
-        const [tasksRes, userTasksRes] = await Promise.all([
-            apiRequest('/game-data'),
-            apiRequest('/user-tasks')
+        const [gameDataRes, userTasksRes] = await Promise.all([
+            apiRequest('/game-data'), 
+            apiRequest('/user-tasks')  
         ]);
 
-        gameData.tasks = tasksRes.tasks || [];
-        userProgress.completed_task_ids = userTasksRes.filter(t => t.is_completed).map(t => t.task_id);
+        gameData.tasks = gameDataRes.tasks || [];
+        const completedTaskIds = userTasksRes.filter(t => t.is_completed).map(t => t.task_id);
 
 
         tasksContainer.innerHTML = '';
-        const activeTasks = gameData.tasks.filter(task => !userProgress.completed_task_ids.includes(task.id));
-
+        const activeTasks = gameData.tasks.filter(task => !completedTaskIds.includes(task.id));
         if (activeTasks.length === 0) {
             tasksContainer.innerHTML = '<div class="empty-state">No active tasks!</div>';
         } else {
             activeTasks.forEach(task => {
+                const userTaskProgress = userTasksRes.find(ut => ut.task_id === task.id);
+                const progress = userTaskProgress ? (userTaskProgress.current_progress / task.target_value) * 100 : 0;
+
                 const card = document.createElement('div');
                 card.className = 'achievement-card';
                 card.innerHTML = `
@@ -545,7 +577,7 @@ async function loadAchievements() {
                         <h3>${task.name}</h3>
                         <p>${task.description}</p>
                         <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${task.progress || 0}%"></div>
+                            <div class="progress-bar" style="width: ${Math.min(progress, 100)}%"></div>
                         </div>
                     </div>
                 `;
@@ -555,8 +587,7 @@ async function loadAchievements() {
 
 
         achievementsContainer.innerHTML = '';
-        const completedTasks = gameData.tasks.filter(task => userProgress.completed_task_ids.includes(task.id));
-
+        const completedTasks = gameData.tasks.filter(task => completedTaskIds.includes(task.id));
         if (completedTasks.length === 0) {
             achievementsContainer.innerHTML = '<div class="empty-state">No achievements yet!</div>';
         } else {
@@ -707,7 +738,6 @@ function startPassiveIncome() {
 }
 
 function setupEventListeners() {
-
     for (const key in navButtons) {
         if (navButtons[key]) {
             navButtons[key].onclick = () => showPage(key);
@@ -715,42 +745,25 @@ function setupEventListeners() {
     }
 
     if (clickImage) {
-        clickImage.onclick = () => {
-            if (!userData || !userData.coins_per_click) return;
-            tg.HapticFeedback.impactOccurred('light');
-
-            const clickAmount = userData.coins_per_click;
-            userData.coins += clickAmount;
-            updateUI();
-            clickBuffer++;
-
-            if (characterBackgroundEl) {
-                characterBackgroundEl.style.transform = 'scale(1.04)';
-                setTimeout(() => { characterBackgroundEl.style.transform = 'scale(1)'; }, 150);
-            }
-
-            const rect = clickImage.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
-
-            clearTimeout(clickSyncTimeout);
-            clickSyncTimeout = setTimeout(syncClicks, SYNC_INTERVAL);
-        };
+        clickImage.onclick = handleUserClick;
     }
 
     const transferBtn = document.getElementById('transferBtn');
     if (transferBtn) {
         transferBtn.onclick = handleTransfer;
     }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            syncClicks();
+        }
+    });
 }
-
-
-
 
 
 document.addEventListener('DOMContentLoaded', () => {
     tg.ready();
+    generateUpgradeHTML(); 
     setupEventListeners();
     init();
     showPage('main');
