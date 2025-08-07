@@ -16,7 +16,8 @@ let lastClickTime = 0;
 let isSyncing = false;
 let clickSyncTimeout = null;
 const SYNC_INTERVAL = 1500; 
-const MAX_CLICKS_PER_SECOND = 25; 
+const MAX_CLICKS_PER_SECOND = 25;
+const clickTimestamps = [];  
 
 const cpsDisplay = document.getElementById('cps-display');
 const coinsEl = document.getElementById('coins');
@@ -174,18 +175,17 @@ function updateUI() {
 
 function handleUserClick(event) {
     if (!userData || !userData.coins_per_click) return;
-
     const now = Date.now();
-    if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) {
-        return;
-    }
+
+    if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) return;
+
     lastClickTime = now;
     clickTimestamps.push(now);
 
     tg.HapticFeedback.impactOccurred('light');
-
-    userData.coins += userData.coins_per_click; 
+    userData.coins += userData.coins_per_click;
     clickBuffer++;
+
     updateUI();
 
     if (characterBackgroundEl) {
@@ -248,7 +248,6 @@ async function syncClicks() {
     isSyncing = true;
     const clicksToSend = clickBuffer;
     clickBuffer = 0;
-
     try {
         const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
         if (updatedUser) {
@@ -256,10 +255,24 @@ async function syncClicks() {
             updateUI();
         }
     } catch (err) {
-        console.error("Click sync failed, returning clicks to buffer:", err);
         clickBuffer += clicksToSend;
     } finally {
         isSyncing = false;
+    }
+}
+
+async function purchaseUpgrade(upgradeId) {
+    await syncClicks(); 
+    try {
+        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
+        userData = updatedUser;
+        updateUI();
+        startPassiveIncome();
+        showNotification('Upgrade successful!', 'success');
+        tg.HapticFeedback.notificationOccurred('success');
+    } catch (e) {
+        showNotification(e.message, 'error');
+        tg.HapticFeedback.notificationOccurred('error');
     }
 }
 
@@ -316,21 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-async function purchaseUpgrade(upgradeId) {
-    await syncClicks();
 
-    try {
-        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
-        userData = updatedUser; 
-        updateUI();
-        startPassiveIncome();
-        showNotification('Upgrade successful!', 'success');
-        tg.HapticFeedback.notificationOccurred('success');
-    } catch (e) {
-        showNotification(e.message, 'error');
-        tg.HapticFeedback.notificationOccurred('error');
-    }
-}
 
 
 async function handleTransfer() {
@@ -568,7 +567,6 @@ async function claimTaskReward(taskId) {
 async function loadAchievements() {
     const tasksContainer = document.querySelector('.tasks-list');
     const achievementsContainer = document.querySelector('.achievements-list');
-
     tasksContainer.innerHTML = '<div class="loading-state">Loading...</div>';
     achievementsContainer.innerHTML = '<div class="loading-state">Loading...</div>';
 
@@ -577,49 +575,31 @@ async function loadAchievements() {
             apiRequest('/game-data'),
             apiRequest('/user-tasks')
         ]);
-
         gameData.tasks = gameDataRes.tasks || [];
         const completedTaskIds = userTasksRes.filter(t => t.is_completed).map(t => t.task_id);
 
+
         tasksContainer.innerHTML = '';
         const activeTasks = gameData.tasks.filter(task => !completedTaskIds.includes(task.id));
+        if (activeTasks.length === 0) {
+            tasksContainer.innerHTML = '<div class="empty-state">All tasks completed!</div>';
+        } else {
+            activeTasks.forEach(task => {  });
+        }
 
         achievementsContainer.innerHTML = '';
         const completedTasks = gameData.tasks.filter(task => completedTaskIds.includes(task.id));
-
         if (completedTasks.length === 0) {
             achievementsContainer.innerHTML = '<div class="empty-state">No achievements yet!</div>';
         } else {
-            completedTasks.forEach(task => {
-                const card = document.createElement('div');
-                card.className = 'achievement-card unlocked';
-
-                const isClaimed = userProgress.claimed_task_ids.includes(task.id);
-                let actionHtml = `<p class="completed-text">Completed!</p>`;
-                if (task.reward_amount > 0 && !isClaimed) {
-                    actionHtml = `<button class="action-button claim-button" onclick="claimTaskReward(${task.id})">
-                        Claim +${task.reward_amount} Coins
-                    </button>`;
-                } else if (task.reward_amount > 0 && isClaimed) {
-                    actionHtml = `<p class="completed-text">Reward Claimed</p>`;
-                }
-
-                card.innerHTML = `
-                    <div class="achievement-icon">🏆</div>
-                    <div class="achievement-content">
-                        <h3>${task.name}</h3>
-                        <p>${task.description}</p>
-                        ${actionHtml}
-                    </div>
-                `;
-                achievementsContainer.appendChild(card);
-            });
+            completedTasks.forEach(task => {  });
         }
     } catch (e) {
         tasksContainer.innerHTML = '<div class="error-state">Failed to load tasks</div>';
         achievementsContainer.innerHTML = '<div class="error-state">Failed to load achievements</div>';
     }
 }
+
 
 
 function showNotification(message, type = 'info') {
@@ -657,14 +637,12 @@ async function init() {
             apiRequest('/user'),
             apiRequest('/game-data'),
             apiRequest('/user-progress'),
-            apiRequest('/tasks/claimed') 
+            apiRequest('/tasks/claimed')
         ]);
-
         userData = userDataRes.user;
         gameData = gameDataRes;
         userProgress = progressRes;
-        userProgress.claimed_task_ids = claimedTasksRes.map(t => t.task_id); 
-
+        userProgress.claimed_task_ids = claimedTasksRes.map(t => t.task_id);
         updateUI();
 
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
