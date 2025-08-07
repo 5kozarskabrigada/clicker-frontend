@@ -5,7 +5,7 @@ const API_URL = 'https://clicker-backend-chjq.onrender.com';
 
 let userData = null;
 let gameData = { images: [], tasks: [] };
-let userProgress = { unlocked_image_ids: [] };
+let userProgress = { unlocked_image_ids: [], claimed_task_ids: [] };
 let transactionHistory = [];
 let activeIncomeInterval = null;
 
@@ -177,15 +177,14 @@ function handleUserClick(event) {
 
     const now = Date.now();
     if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) {
-        return; 
+        return;
     }
     lastClickTime = now;
-    clickTimestamps.push(now); 
+    clickTimestamps.push(now);
 
     tg.HapticFeedback.impactOccurred('light');
 
-    const clickAmount = userData.coins_per_click;
-    userData.coins += clickAmount; 
+    userData.coins += userData.coins_per_click; 
     clickBuffer++;
     updateUI();
 
@@ -197,11 +196,12 @@ function handleUserClick(event) {
     const rect = clickImage.getBoundingClientRect();
     const x = event.clientX || (rect.left + rect.width / 2);
     const y = event.clientY || (rect.top + rect.height / 2);
-    showFloatingCoin(x, y, `+${formatCoins(clickAmount)}`);
+    showFloatingCoin(x, y, `+${formatCoins(userData.coins_per_click)}`);
 
     clearTimeout(clickSyncTimeout);
     clickSyncTimeout = setTimeout(syncClicks, SYNC_INTERVAL);
 }
+
 
 clickImage.onclick = (event) => {
     if (!userData || !userData.coins_per_click) return;
@@ -264,7 +264,6 @@ async function syncClicks() {
 }
 
 
-
 setInterval(() => {
     if (clickBuffer > 0 && !isSyncing) {
         syncClicks();
@@ -318,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 async function purchaseUpgrade(upgradeId) {
-
     await syncClicks();
 
     try {
@@ -328,9 +326,7 @@ async function purchaseUpgrade(upgradeId) {
         startPassiveIncome();
         showNotification('Upgrade successful!', 'success');
         tg.HapticFeedback.notificationOccurred('success');
-        if (pages.top.classList.contains('active')) { loadTopPlayers(); }
-    } 
-    catch (e) {
+    } catch (e) {
         showNotification(e.message, 'error');
         tg.HapticFeedback.notificationOccurred('error');
     }
@@ -558,57 +554,35 @@ function renderHistory(filter = '') {
 async function claimTaskReward(taskId) {
     try {
         const updatedUser = await apiRequest(`/tasks/${taskId}/claim`, 'POST');
-        userData = updatedUser;
+        userData = updatedUser; 
+        userProgress.claimed_task_ids.push(taskId); 
         updateUI();
         showNotification('Reward claimed!', 'success');
-        loadAchievements();
+        loadAchievements(); 
     } catch (e) {
+
     }
 }
+
 
 async function loadAchievements() {
     const tasksContainer = document.querySelector('.tasks-list');
     const achievementsContainer = document.querySelector('.achievements-list');
 
-    tasksContainer.innerHTML = '<div class="loading-state">Loading tasks...</div>';
-    achievementsContainer.innerHTML = '<div class="loading-state">Loading achievements...</div>';
+    tasksContainer.innerHTML = '<div class="loading-state">Loading...</div>';
+    achievementsContainer.innerHTML = '<div class="loading-state">Loading...</div>';
 
     try {
-        const [gameDataRes, userTasksRes, claimedTasksRes] = await Promise.all([
+        const [gameDataRes, userTasksRes] = await Promise.all([
             apiRequest('/game-data'),
-            apiRequest('/user-tasks'),
+            apiRequest('/user-tasks')
         ]);
-
 
         gameData.tasks = gameDataRes.tasks || [];
         const completedTaskIds = userTasksRes.filter(t => t.is_completed).map(t => t.task_id);
 
-
         tasksContainer.innerHTML = '';
         const activeTasks = gameData.tasks.filter(task => !completedTaskIds.includes(task.id));
-        if (activeTasks.length === 0) {
-            tasksContainer.innerHTML = '<div class="empty-state">No active tasks!</div>';
-        } else {
-            activeTasks.forEach(task => {
-                const userTaskProgress = userTasksRes.find(ut => ut.task_id === task.id);
-                const progress = userTaskProgress ? (userTaskProgress.current_progress / task.target_value) * 100 : 0;
-
-                const card = document.createElement('div');
-                card.className = 'achievement-card';
-                card.innerHTML = `
-                    <div class="achievement-icon">🎯</div>
-                    <div class="achievement-content">
-                        <h3>${task.name}</h3>
-                        <p>${task.description}</p>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${Math.min(progress, 100)}%"></div>
-                        </div>
-                    </div>
-                `;
-                tasksContainer.appendChild(card);
-            });
-        }
-
 
         achievementsContainer.innerHTML = '';
         const completedTasks = gameData.tasks.filter(task => completedTaskIds.includes(task.id));
@@ -624,7 +598,7 @@ async function loadAchievements() {
                 let actionHtml = `<p class="completed-text">Completed!</p>`;
                 if (task.reward_amount > 0 && !isClaimed) {
                     actionHtml = `<button class="action-button claim-button" onclick="claimTaskReward(${task.id})">
-                        Claim ${formatCoins(task.reward_amount, 0)} Coins
+                        Claim +${task.reward_amount} Coins
                     </button>`;
                 } else if (task.reward_amount > 0 && isClaimed) {
                     actionHtml = `<p class="completed-text">Reward Claimed</p>`;
@@ -677,33 +651,28 @@ function animationLoop() {
 
 
 async function init() {
-
-    const claimedTasks = await apiRequest('/tasks/claimed'); 
-    userProgress.claimed_task_ids = claimedTasks.map(t => t.task_id);
-
     const loadingOverlay = document.getElementById('loading-overlay');
-    generateUpgradeHTML();
-
     try {
-        const [userDataRes, gameDataRes, progressRes] = await Promise.all([
+        const [userDataRes, gameDataRes, progressRes, claimedTasksRes] = await Promise.all([
             apiRequest('/user'),
             apiRequest('/game-data'),
-            apiRequest('/user-progress')
+            apiRequest('/user-progress'),
+            apiRequest('/tasks/claimed') 
         ]);
 
         userData = userDataRes.user;
         gameData = gameDataRes;
         userProgress = progressRes;
+        userProgress.claimed_task_ids = claimedTasksRes.map(t => t.task_id); 
 
         updateUI();
 
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-        if (equippedImage && characterBackgroundEl) {
+        if (equippedImage) {
             characterBackgroundEl.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
         startPassiveIncome();
-
         loadingOverlay.classList.add('hidden');
 
     } catch (e) {
@@ -792,10 +761,8 @@ function setupEventListeners() {
         }
     });
 
-
     setInterval(() => {
         const now = Date.now();
-
         while (clickTimestamps.length > 0 && clickTimestamps[0] < now - 1000) {
             clickTimestamps.shift();
         }
