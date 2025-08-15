@@ -151,6 +151,15 @@ function generateUpgradeHTML() {
     }
 }
 
+function updateUserStats(user) {
+    if (user) {
+        const formattedCoins = parseFloat(user.coins).toFixed(9);
+        document.getElementById('coins').textContent = formattedCoins;
+        document.getElementById('coinsPerClick').textContent = user.coins_per_click.toFixed(9);
+        document.getElementById('coinsPerSec').textContent = user.coins_per_sec.toFixed(9);
+    }
+}
+
 function updateUI() {
     if (!userData) return;
     coinsEl.textContent = formatCoins(userData.coins);
@@ -274,27 +283,35 @@ async function syncClicks() {
 
 async function purchaseUpgrade(upgradeId) {
     try {
-        // Check if user has enough coins client-side first
-        const upgrade = upgrades.click.concat(upgrades.auto, upgrades.offline).find(u => u.id === upgradeId);
-        const level = userData[`${upgradeId}_level`] || 0;
-        const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
+        const response = await apiRequest('/upgrade', 'POST', { upgradeId });
 
-        if (userData.coins < cost) {
-            showNotification("You don't have enough coins for this upgrade!", "error");
-            return;
+        if (response.success) {
+            const user = await fetchUserData();
+            updateUserStats(user);
+            showNotification('Upgrade purchased successfully!', 'success');
         }
-
-        const data = await apiRequest(`/upgrade`, 'POST', { upgradeId });
-        userData.coins = parseFloat(data.newCoins);
-        userData[`${upgradeId}_level`] = (userData[`${upgradeId}_level`] || 0) + 1;
-        updateUI();
-        showNotification("Upgrade purchased!", "success");
-    } catch (err) {
-        console.error('Upgrade failed:', err);
-        showNotification('Upgrade failed: ' + (err.message || 'Unknown error'), 'error');
+    } catch (error) {
+        console.error('Upgrade failed:', error);
+        showNotification(error.message || 'Failed to purchase upgrade', 'error');
     }
 }
 
+
+setInterval(async () => {
+    try {
+        const user = await fetchUserData();
+        updateUserStats(user);
+
+        if (user.coins > parseFloat(document.getElementById('coins').textContent)) {
+            const earned = user.coins - parseFloat(document.getElementById('coins').textContent);
+            if (earned > 0) {
+                showNotification(`Earned ${earned.toFixed(9)} coins while offline!`, 'success');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating passive income:', error);
+    }
+}, 30000); 
 
 
 setInterval(() => {
