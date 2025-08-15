@@ -252,34 +252,46 @@ function registerClick() {
 }
 
 async function syncClicks() {
-    if (unsentClicks <= 0) return;
+    if (clickBuffer <= 0) return;
+
+    const clicksToSend = clickBuffer;
+    clickBuffer = 0; // Reset buffer before sending to prevent double-counting
+
     try {
-        const res = await apiRequest(`/click`, 'POST', { clicks: unsentClicks });
-        unsentClicks = 0;
-        localStorage.setItem('unsentClicks', '0');
+        const res = await apiRequest(`/click`, 'POST', { clicks: clicksToSend });
         userData.coins = parseFloat(res.newCoins);
         updateUI();
-        document.getElementById('cps-display').textContent =
-            `All clicks saved at ${new Date().toLocaleTimeString()}`;
+        showNotification(`${clicksToSend} clicks saved!`, 'success');
     } catch (err) {
-        console.warn('Sync failed, will retry');
+        console.error('Sync failed:', err);
+        // Restore clicks to buffer if sync failed
+        clickBuffer += clicksToSend;
+        showNotification('Failed to save clicks. Will retry...', 'error');
     }
 }
 
 
-setInterval(syncClicks, 2000);
-window.addEventListener('beforeunload', syncClicks);
-
 
 async function purchaseUpgrade(upgradeId) {
     try {
+        // Check if user has enough coins client-side first
+        const upgrade = upgrades.click.concat(upgrades.auto, upgrades.offline).find(u => u.id === upgradeId);
+        const level = userData[`${upgradeId}_level`] || 0;
+        const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
+
+        if (userData.coins < cost) {
+            showNotification("You don't have enough coins for this upgrade!", "error");
+            return;
+        }
+
         const data = await apiRequest(`/upgrade`, 'POST', { upgradeId });
         userData.coins = parseFloat(data.newCoins);
+        userData[`${upgradeId}_level`] = (userData[`${upgradeId}_level`] || 0) + 1;
         updateUI();
         showNotification("Upgrade purchased!", "success");
     } catch (err) {
         console.error('Upgrade failed:', err);
-        showNotification('Upgrade failed: ' + err.message, 'error');
+        showNotification('Upgrade failed: ' + (err.message || 'Unknown error'), 'error');
     }
 }
 
