@@ -243,32 +243,41 @@ clickImage.onclick = (event) => {
 };
 
 
-async function syncClicks(isBeacon = false) {
-    if (clickBuffer === 0 || isSyncing) return;
+let unsentClicks = parseInt(localStorage.getItem('unsentClicks') || '0', 10);
 
-    const clicksToSend = clickBuffer;
-    clickBuffer = 0; 
+function registerClick() {
+    unsentClicks++;
+    localStorage.setItem('unsentClicks', unsentClicks);
+    updateClickDisplay();
+}
 
-    if (isBeacon && navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify({ clicks: clicksToSend })], { type: 'application/json' });
-        navigator.sendBeacon(`${API_URL}/api/sync`, blob);
-        return; 
-    }
 
-    isSyncing = true;
+async function syncClicks() {
+    if (unsentClicks <= 0) return;
+
     try {
-        const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
-        if (updatedUser) {
-            userData = updatedUser;
-            updateUI();
+        const res = await fetch(`${API_URL}/api/click`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': tg.initData || ''
+            },
+            body: JSON.stringify({ clicks: unsentClicks })
+        });
+
+        if (res.ok) {
+            unsentClicks = 0;
+            localStorage.setItem('unsentClicks', '0');
+        } else {
+            console.warn('Click sync failed, will retry later');
         }
     } catch (err) {
-        console.error("Sync failed, restoring clicks to buffer.");
-        clickBuffer += clicksToSend; 
-    } finally {
-        isSyncing = false;
+        console.error('Network error while syncing clicks', err);
     }
 }
+
+
+setInterval(syncClicks, 2000);
 
 async function purchaseUpgrade(upgradeId) {
     try {
