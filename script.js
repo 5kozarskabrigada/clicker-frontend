@@ -188,22 +188,24 @@ function updateUI() {
 }
 
 
+
 async function handleUserClick(event) {
     if (!userData || !userData.coins_per_click) return;
     const now = Date.now();
 
     if (now - lastClickTime < 1000 / MAX_CLICKS_PER_SECOND) return;
-
     lastClickTime = now;
-    clickTimestamps.push(now);
+
+    const currentDisplayedCoins = parseFloat(coinsEl.textContent);
+    const clickValue = parseFloat(userData.coins_per_click);
+
+    coinsEl.textContent = (currentDisplayedCoins + clickValue).toFixed(9);
+
+    clickBuffer++;
 
     if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
         Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
-
-    userData.coins = (parseFloat(userData.coins) + parseFloat(userData.coins_per_click));
-    clickBuffer++;
-    updateUI();
 
     if (characterBackgroundEl) {
         characterBackgroundEl.style.transform = 'scale(1.02)';
@@ -268,29 +270,31 @@ function registerClick() {
     updateUI();
 }
 
+// In script.js
 async function syncClicks() {
     if (clickBuffer <= 0 || isSyncing) return;
 
     isSyncing = true;
     const clicksToSend = clickBuffer;
-    clickBuffer = 0;
 
     try {
         const response = await apiRequest('/click', 'POST', { clicks: clicksToSend });
         if (response) {
             userData = response;
+
+            clickBuffer = 0;
+
             updateUI();
-            showNotification(`${clicksToSend} clicks saved!`, 'success');
+
+            showNotification(`${clicksToSend} clicks registered!`, 'success');
         }
     } catch (error) {
         console.error('Sync failed:', error);
-        clickBuffer += clicksToSend; 
-        showNotification('Failed to save clicks. Will retry...', 'error');
+        showNotification('Failed to save clicks. Retrying...', 'error');
     } finally {
         isSyncing = false;
     }
 }
-
 
 async function purchaseUpgrade(upgradeId) {
     try {
@@ -311,17 +315,9 @@ async function purchaseUpgrade(upgradeId) {
 
 setInterval(async () => {
     try {
-        const user = await fetchUserData();
-        updateUserStats(user);
-
-        if (user.coins > parseFloat(document.getElementById('coins').textContent)) {
-            const earned = user.coins - parseFloat(document.getElementById('coins').textContent);
-            if (earned > 0) {
-                showNotification(`Earned ${earned.toFixed(9)} coins while offline!`, 'success');
-            }
-        }
+        await fetchUserData();
     } catch (error) {
-        console.error('Error updating passive income:', error);
+        console.error('Error during periodic server sync:', error);
     }
 }, 30000); 
 
@@ -805,7 +801,8 @@ async function init() {
             characterBackgroundEl.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
-        startPassiveIncome();
+        startPassiveIncome(); 
+        startVisualPassiveIncome(); 
         loadingOverlay.classList.add('hidden');
 
     } catch (e) {
@@ -866,6 +863,21 @@ function openTopTab(event, sortBy) {
 
     event.currentTarget.classList.add('active');
     loadTopPlayers(sortBy);
+}
+
+
+let visualCoinTickerInterval = null;
+
+function startVisualPassiveIncome() {
+    clearInterval(visualCoinTickerInterval);
+    if (userData && userData.coins_per_sec > 0) {
+        visualCoinTickerInterval = setInterval(() => {
+
+            const currentDisplayedCoins = parseFloat(coinsEl.textContent);
+            const incomePerSecond = parseFloat(userData.coins_per_sec);
+            coinsEl.textContent = (currentDisplayedCoins + incomePerSecond).toFixed(9);
+        }, 1000);
+    }
 }
 
 function startPassiveIncome() {
