@@ -32,7 +32,6 @@ body {
     width: 100vw;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -43,8 +42,8 @@ body {
     display: flex;
     flex-direction: column;
     max-width: 480px;
-    min-width: 360px;
-    min-height: 600px;
+    min-width: 480px;
+    min-height: 900px;
     position: relative;
     border-radius: 1rem;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);

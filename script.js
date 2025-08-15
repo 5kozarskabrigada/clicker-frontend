@@ -264,27 +264,10 @@ async function syncClicks() {
 async function purchaseUpgrade(upgradeId) {
     try {
         await syncClicks();
-        const latestUserData = await apiRequest('/user');
-        userData = latestUserData.user;
-        updateUI();
 
-        const allUpgrades = [...upgrades.click, ...upgrades.auto, ...upgrades.offline];
-        const upgrade = allUpgrades.find(u => u.id === upgradeId);
+        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
 
-        if (!upgrade) {
-            throw new Error('Upgrade definition not found on the client.');
-        }
-
-        const level = userData[`${upgrade.id}_level`] || 0;
-        const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
-
-        if (userData.coins < cost) {
-            throw new Error('You do not have enough coins.');
-        }
-
-        const updatedUserAfterPurchase = await apiRequest('/upgrade', 'POST', { upgradeId });
-        userData = updatedUserAfterPurchase;
-
+        userData = updatedUser;
         updateUI();
         startPassiveIncome();
         showNotification('Upgrade successful!', 'success');
@@ -293,10 +276,14 @@ async function purchaseUpgrade(upgradeId) {
     } catch (e) {
         showNotification(e.message, 'error');
         tg.HapticFeedback.notificationOccurred('error');
-        
-        const refreshedUserData = await apiRequest('/user');
-        userData = refreshedUserData.user;
-        updateUI();
+
+        try {
+            const refreshedUserData = await apiRequest('/user');
+            userData = refreshedUserData.user;
+            updateUI();
+        } catch (refreshError) {
+            console.error("Failed to re-sync user data after failed upgrade:", refreshError);
+        }
     }
 }
 
@@ -720,17 +707,22 @@ function showNotification(message, type = 'info') {
     }, 4000)
 }
 
-// function showFloatingCoin(x, y, amount) {
-//     const coin = document.createElement('div');
-//     coin.className = 'floating-coin';
-//     coin.textContent = amount;
-//     coin.style.left = `${x}px`;
-//     coin.style.top = `${y}px`;
-//     document.body.appendChild(coin);
-//     setTimeout(() => coin.remove(), 1000);
-// }
+function showFloatingCoin(x, y, amount) {
+    const coin = document.createElement('div');
+    coin.className = 'floating-coin';
+    coin.textContent = amount;
+    
+    coin.style.left = `${x}px`;
+    coin.style.top = `${y}px`;
+    document.body.appendChild(coin);
 
-
+    
+    setTimeout(() => {
+        if (coin) {
+            coin.remove();
+        }
+    }, 1000); 
+}
 function animationLoop() {
     requestAnimationFrame(animationLoop);
 }
@@ -739,6 +731,8 @@ function animationLoop() {
 async function init() {
     const loadingOverlay = document.getElementById('loading-overlay');
     try {
+        loadPendingClicks();
+
         const [userDataRes, gameDataRes, progressRes, claimedTasksRes] = await Promise.all([
             apiRequest('/user'),
             apiRequest('/game-data'),
@@ -841,10 +835,14 @@ function setupEventListeners() {
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
-            syncClicks();
+            if (clickBuffer > 0) {
+                savePendingClicks();
+                syncClicks();
+            }
         }
     });
 
+    // K
     setInterval(() => {
         const now = Date.now();
         while (clickTimestamps.length > 0 && clickTimestamps[0] < now - 1000) {
