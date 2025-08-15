@@ -247,8 +247,8 @@ let unsentClicks = parseInt(localStorage.getItem('unsentClicks') || '0', 10);
 function registerClick() {
     unsentClicks++;
     localStorage.setItem('unsentClicks', unsentClicks);
-    coins += coinsPerClick;
-    updateCoinsDisplay();
+    userData.coins += userData.coins_per_click;
+    updateUI();
 }
 
 async function syncClicks() {
@@ -257,22 +257,29 @@ async function syncClicks() {
         const res = await apiRequest(`/click`, 'POST', { clicks: unsentClicks });
         unsentClicks = 0;
         localStorage.setItem('unsentClicks', '0');
-        document.getElementById('cps-display').textContent = `All clicks saved at ${new Date().toLocaleTimeString()}`;
+        userData.coins = parseFloat(res.newCoins);
+        updateUI();
+        document.getElementById('cps-display').textContent =
+            `All clicks saved at ${new Date().toLocaleTimeString()}`;
     } catch (err) {
         console.warn('Sync failed, will retry');
     }
 }
+
+
 setInterval(syncClicks, 2000);
+window.addEventListener('beforeunload', syncClicks);
 
 
-async function purchaseUpgrade(upgradeType, tier) {
+async function purchaseUpgrade(upgradeId) {
     try {
-        const data = await apiRequest(`/upgrade`, 'POST', { type: upgradeType, tier });
-        coins = parseFloat(data.newCoins);
-        updateCoinsDisplay();
+        const data = await apiRequest(`/upgrade`, 'POST', { upgradeId });
+        userData.coins = parseFloat(data.newCoins);
+        updateUI();
+        showNotification("Upgrade purchased!", "success");
     } catch (err) {
         console.error('Upgrade failed:', err);
-        showNotification('Upgrade failed: ' + err.message);
+        showNotification('Upgrade failed: ' + err.message, 'error');
     }
 }
 
@@ -366,7 +373,7 @@ async function handleTransfer() {
 
 async function loadTopPlayers(sortBy = 'coins') {
     await syncClicks();
-    
+
     const currentSort = document.querySelector('.top-tab-link.active')?.dataset.sort || 'coins';
     try {
         const topListEl = document.getElementById('topList');
