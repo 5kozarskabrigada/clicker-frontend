@@ -262,17 +262,41 @@ async function syncClicks() {
 }
 
 async function purchaseUpgrade(upgradeId) {
-    await syncClicks(); 
     try {
-        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
-        userData = updatedUser;
+        await syncClicks();
+        const latestUserData = await apiRequest('/user');
+        userData = latestUserData.user;
+        updateUI();
+
+        const allUpgrades = [...upgrades.click, ...upgrades.auto, ...upgrades.offline];
+        const upgrade = allUpgrades.find(u => u.id === upgradeId);
+
+        if (!upgrade) {
+            throw new Error('Upgrade definition not found on the client.');
+        }
+
+        const level = userData[`${upgrade.id}_level`] || 0;
+        const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
+
+        if (userData.coins < cost) {
+            throw new Error('You do not have enough coins.');
+        }
+
+        const updatedUserAfterPurchase = await apiRequest('/upgrade', 'POST', { upgradeId });
+        userData = updatedUserAfterPurchase;
+
         updateUI();
         startPassiveIncome();
         showNotification('Upgrade successful!', 'success');
         tg.HapticFeedback.notificationOccurred('success');
+
     } catch (e) {
         showNotification(e.message, 'error');
         tg.HapticFeedback.notificationOccurred('error');
+        
+        const refreshedUserData = await apiRequest('/user');
+        userData = refreshedUserData.user;
+        updateUI();
     }
 }
 

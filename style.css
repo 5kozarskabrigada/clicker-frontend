@@ -45,11 +45,12 @@ body {
     flex-grow: 1;
     position: relative;
     display: flex;
+    overflow: hidden;
 }
 
-.app-content::-webkit-scrollbar {
+/* .app-content::-webkit-scrollbar {
     display: none;
-}
+} */
 
 .page {
     display: none;
