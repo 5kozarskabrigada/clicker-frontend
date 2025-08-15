@@ -94,19 +94,24 @@ function showPage(pageId) {
 
 async function apiRequest(endpoint, method = 'GET', body = null) {
     try {
-        const headers = { 'Content-Type': 'application/json', 'Authorization': Telegram.WebApp.initData || '' };
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': Telegram.WebApp.initData || ''
+        };
         const options = { method, headers };
         if (body) { options.body = JSON.stringify(body); }
+
         const response = await fetch(`${API_URL}/api${endpoint}`, options);
+        const responseData = await response.json();
+
         if (!response.ok) {
-            const responseData = await response.json().catch(() => ({ error: 'Invalid JSON response' }));
             throw new Error(responseData.error || `HTTP error! Status: ${response.status}`);
         }
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
+
+        return responseData;
     } catch (error) {
         console.error(`API request to ${endpoint} failed:`, error);
-        showNotification(error.message, 'error');
+        showNotification(error.message || 'Network error occurred', 'error');
         throw error;
     }
 }
@@ -162,10 +167,11 @@ function updateUserStats(user) {
 
 function updateUI() {
     if (!userData) return;
-    coinsEl.textContent = formatCoins(userData.coins);
-    coinsPerClickEl.textContent = formatCoins(userData.coins_per_click);
-    coinsPerSecEl.textContent = formatCoins(userData.coins_per_sec);
-    if (offlineRateEl) offlineRateEl.textContent = formatCoins(userData.offline_coins_per_hour);
+
+    coinsEl.textContent = parseFloat(userData.coins).toFixed(9);
+    coinsPerClickEl.textContent = parseFloat(userData.coins_per_click).toFixed(9);
+    coinsPerSecEl.textContent = parseFloat(userData.coins_per_sec).toFixed(9);
+
     for (const type in upgrades) {
         upgrades[type].forEach(upgrade => {
             const levelEl = document.getElementById(`${upgrade.id}_level`);
@@ -173,16 +179,16 @@ function updateUI() {
                 const level = userData[`${upgrade.id}_level`] || 0;
                 const cost = upgrade.base_cost * Math.pow(INTRA_TIER_COST_MULTIPLIER, level);
                 levelEl.textContent = level;
-                document.getElementById(`${upgrade.id}_cost`).textContent = formatCoins(cost);
-                document.querySelector(`#${upgrade.id} .action-button`).disabled = userData.coins < cost;
+                document.getElementById(`${upgrade.id}_cost`).textContent = cost.toFixed(9);
+                document.querySelector(`#${upgrade.id} .action-button`).disabled =
+                    parseFloat(userData.coins) < cost;
             }
         });
     }
 }
 
 
-
-function handleUserClick(event) {
+async function handleUserClick(event) {
     if (!userData || !userData.coins_per_click) return;
     const now = Date.now();
 
@@ -191,10 +197,12 @@ function handleUserClick(event) {
     lastClickTime = now;
     clickTimestamps.push(now);
 
-    tg.HapticFeedback.impactOccurred('light');
-    userData.coins += userData.coins_per_click;
-    clickBuffer++;
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback) {
+        Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
 
+    userData.coins = (parseFloat(userData.coins) + parseFloat(userData.coins_per_click));
+    clickBuffer++;
     updateUI();
 
     if (characterBackgroundEl) {
@@ -261,24 +269,27 @@ function registerClick() {
 }
 
 async function syncClicks() {
-    if (clickBuffer <= 0) return;
+    if (clickBuffer <= 0 || isSyncing) return;
 
+    isSyncing = true;
     const clicksToSend = clickBuffer;
-    clickBuffer = 0; // Reset buffer before sending to prevent double-counting
+    clickBuffer = 0;
 
     try {
-        const res = await apiRequest(`/click`, 'POST', { clicks: clicksToSend });
-        userData.coins = parseFloat(res.newCoins);
-        updateUI();
-        showNotification(`${clicksToSend} clicks saved!`, 'success');
-    } catch (err) {
-        console.error('Sync failed:', err);
-        // Restore clicks to buffer if sync failed
-        clickBuffer += clicksToSend;
+        const response = await apiRequest('/click', 'POST', { clicks: clicksToSend });
+        if (response) {
+            userData = response;
+            updateUI();
+            showNotification(`${clicksToSend} clicks saved!`, 'success');
+        }
+    } catch (error) {
+        console.error('Sync failed:', error);
+        clickBuffer += clicksToSend; 
         showNotification('Failed to save clicks. Will retry...', 'error');
+    } finally {
+        isSyncing = false;
     }
 }
-
 
 
 async function purchaseUpgrade(upgradeId) {
@@ -289,13 +300,14 @@ async function purchaseUpgrade(upgradeId) {
             const user = await fetchUserData();
             updateUserStats(user);
             showNotification('Upgrade purchased successfully!', 'success');
+        } else if (response.error) {
+            throw new Error(response.error);
         }
     } catch (error) {
         console.error('Upgrade failed:', error);
         showNotification(error.message || 'Failed to purchase upgrade', 'error');
     }
 }
-
 
 setInterval(async () => {
     try {
@@ -326,6 +338,18 @@ window.addEventListener('beforeunload', () => {
         syncClicks();
     }
 });
+
+async function fetchUserData() {
+    try {
+        const response = await apiRequest('/user');
+        userData = response.user;
+        updateUI();
+        return userData;
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     const clickImage = document.getElementById('clickImage');
@@ -767,14 +791,17 @@ async function init() {
             apiRequest('/user-progress'),
             apiRequest('/tasks/claimed')
         ]);
+
         userData = userDataRes.user;
         gameData = gameDataRes;
         userProgress = progressRes;
         userProgress.claimed_task_ids = claimedTasksRes.map(t => t.task_id);
+
         updateUI();
+        generateUpgradeHTML();
 
         const equippedImage = gameData.images.find(img => img.id === userData.equipped_image_id);
-        if (equippedImage) {
+        if (equippedImage && characterBackgroundEl) {
             characterBackgroundEl.style.backgroundImage = `url('${equippedImage.image_url}')`;
         }
 
@@ -845,10 +872,17 @@ function startPassiveIncome() {
     clearInterval(activeIncomeInterval);
 
     if (userData && userData.coins_per_sec > 0) {
-        activeIncomeInterval = setInterval(() => {
-            userData.coins += (userData.coins_per_sec / 10);
-            updateUI();
-        }, 100);
+        activeIncomeInterval = setInterval(async () => {
+            try {
+                const response = await apiRequest('/user');
+                if (response.user) {
+                    userData = response.user;
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Error updating passive income:', error);
+            }
+        }, 30000);
     }
 }
 
