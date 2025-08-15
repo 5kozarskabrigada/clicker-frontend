@@ -64,29 +64,35 @@
             </section>
 
 
-            <section id="tasks" class="page">
-                <h1 class="page-title">🎯 Progress</h1>
-                <div class="sub-nav">
-                    <button class="sub-tab-link active" onclick="openSubTab(event, 'tasks-content')">Active
-                        Tasks</button>
-                    <button class="sub-tab-link"
-                        onclick="openSubTab(event, 'achievements-content')">Achievements</button>
+        <section id="tasks" class="page">
+            <h1 class="page-title">🎯 Tasks & Achievements</h1>
+            <div class="sub-nav">
+                <button class="sub-tab-link active" onclick="openSubTab(event, 'active-tasks-content')">Active</button>
+                <button class="sub-tab-link" onclick="openSubTab(event, 'completed-tasks-content')">Completed</button>
+                <button class="sub-tab-link" onclick="openSubTab(event, 'all-tasks-content')">All</button>
+            </div>
+        
+            <div id="active-tasks-content" class="sub-tab-content active">
+                <div class="tasks-container">
+                    <h2 class="section-subtitle">Active Tasks</h2>
+                    <div class="tasks-list" id="active-tasks-list"></div>
                 </div>
-
-                <div id="tasks-content" class="sub-tab-content active">
-                    <div class="tasks-container">
-                        <h2 class="section-subtitle">Current Tasks</h2>
-                        <div class="tasks-list"></div>
-                    </div>
+            </div>
+        
+            <div id="completed-tasks-content" class="sub-tab-content">
+                <div class="tasks-container">
+                    <h2 class="section-subtitle">Completed Achievements</h2>
+                    <div class="tasks-list" id="completed-tasks-list"></div>
                 </div>
-
-                <div id="achievements-content" class="sub-tab-content">
-                    <div class="achievements-container">
-                        <h2 class="section-subtitle">Your Achievements</h2>
-                        <div class="achievements-list"></div>
-                    </div>
+            </div>
+        
+            <div id="all-tasks-content" class="sub-tab-content">
+                <div class="tasks-container">
+                    <h2 class="section-subtitle">All Available Tasks</h2>
+                    <div class="tasks-list" id="all-tasks-list"></div>
                 </div>
-            </section>
+            </div>
+        </section>
 
 
             <section id="images" class="page">

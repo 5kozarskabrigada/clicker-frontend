@@ -577,16 +577,98 @@ function renderHistory(filter = '') {
 async function claimTaskReward(taskId) {
     try {
         const updatedUser = await apiRequest(`/tasks/${taskId}/claim`, 'POST');
-        userData = updatedUser; 
-        userProgress.claimed_task_ids.push(taskId); 
+        userData = updatedUser;
+        if (!userProgress.claimed_task_ids.includes(taskId)) {
+            userProgress.claimed_task_ids.push(taskId);
+        }
         updateUI();
         showNotification('Reward claimed!', 'success');
-        loadAchievements(); 
+        loadTasks(); 
     } catch (e) {
-
+        showNotification(e.message || 'Failed to claim reward.', 'error');
     }
 }
 
+function renderTask(task, userTaskProgress, isClaimed) {
+    const isCompleted = userTaskProgress?.is_completed || false;
+    const canClaim = isCompleted && !isClaimed;
+
+    let progressHTML = '';
+    if (task.type === 'clicks' && !isCompleted) {
+        const progress = Math.min((userTaskProgress?.progress || 0) / task.requirement * 100, 100);
+        progressHTML = `
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: ${progress}%"></div>
+            </div>
+            <p class="progress-text">${userTaskProgress?.progress || 0} / ${task.requirement} Clicks</p>
+        `;
+    }
+
+    return `
+        <div class="achievement-card ${isCompleted ? 'unlocked' : ''}">
+            <div class="achievement-icon">✔️</div>
+            <div class="achievement-content">
+                <h3>${task.name}</h3>
+                <p>${task.description}</p>
+                <p>Reward: ${formatCoins(task.reward)} Coins</p>
+                ${progressHTML}
+            </div>
+            ${canClaim ? `<button class="action-button claim-button" onclick="claimTaskReward(${task.id})">Claim</button>` : ''}
+            ${isClaimed ? `<button class="action-button" disabled>Claimed</button>` : ''}
+        </div>
+    `;
+}
+
+
+
+async function loadTasks() {
+    const activeContainer = document.getElementById('active-tasks-list');
+    const completedContainer = document.getElementById('completed-tasks-list');
+    const allContainer = document.getElementById('all-tasks-list');
+
+    activeContainer.innerHTML = '<div class="loading-state">Loading...</div>';
+    completedContainer.innerHTML = '<div class="loading-state">Loading...</div>';
+    allContainer.innerHTML = '<div class="loading-state">Loading...</div>';
+
+    try {
+        
+        const [gameDataRes, userTasksRes] = await Promise.all([
+            apiRequest('/game-data'),
+            apiRequest('/user-tasks')
+        ]);
+
+        const allTasks = gameDataRes.tasks || [];
+
+        activeContainer.innerHTML = '';
+        completedContainer.innerHTML = '';
+        allContainer.innerHTML = '';
+
+        allTasks.forEach(task => {
+            const userProgressForTask = userTasksRes.find(t => t.task_id === task.id);
+            const isClaimed = userProgress.claimed_task_ids.includes(task.id);
+            const isCompleted = userProgressForTask?.is_completed || false;
+
+            const taskHTML = renderTask(task, userProgressForTask, isClaimed);
+
+            allContainer.innerHTML += taskHTML;
+            if (isCompleted) {
+                completedContainer.innerHTML += taskHTML;
+            } else {
+                activeContainer.innerHTML += taskHTML;
+            }
+        });
+
+        if (activeContainer.innerHTML === '') activeContainer.innerHTML = '<div class="empty-state">No active tasks remaining!</div>';
+        if (completedContainer.innerHTML === '') completedContainer.innerHTML = '<div class="empty-state">No achievements unlocked yet.</div>';
+        if (allContainer.innerHTML === '') allContainer.innerHTML = '<div class="empty-state">No tasks are available at this time.</div>';
+
+    } catch (e) {
+        const errorHTML = '<div class="error-state">Failed to load tasks</div>';
+        activeContainer.innerHTML = errorHTML;
+        completedContainer.innerHTML = errorHTML;
+        allContainer.innerHTML = errorHTML;
+    }
+}
 
 async function loadAchievements() {
     const tasksContainer = document.querySelector('.tasks-list');
