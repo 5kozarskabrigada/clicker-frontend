@@ -149,7 +149,7 @@ body {
     color: transparent;
 }
 
-.clickable-area {
+/* .clickable-area {
     position: absolute;
     top: 0;
     left: 0;
@@ -158,6 +158,12 @@ body {
     cursor: pointer;
     z-index: 5;
     transition: transform 0.1s ease-out;
+} */
+
+.clickable-area {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
 }
 
 .clickable-area:active {
@@ -264,10 +270,10 @@ body {
 }
 
 .game-area {
-    position: relative;
     width: 100%;
-    height: 100%;
-    overflow: hidden;
+    height: calc(100vh - 80px);
+    background-size: cover;
+    background-position: center;
 }
 
 

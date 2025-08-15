@@ -242,68 +242,40 @@ clickImage.onclick = (event) => {
     }
 };
 
-
 let unsentClicks = parseInt(localStorage.getItem('unsentClicks') || '0', 10);
 
 function registerClick() {
     unsentClicks++;
     localStorage.setItem('unsentClicks', unsentClicks);
-    updateClickDisplay();
+    coins += coinsPerClick;
+    updateCoinsDisplay();
 }
-
 
 async function syncClicks() {
     if (unsentClicks <= 0) return;
-
     try {
-        const res = await fetch(`${API_URL}/api/click`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': tg.initData || ''
-            },
-            body: JSON.stringify({ clicks: unsentClicks })
-        });
-
-        if (res.ok) {
-            unsentClicks = 0;
-            localStorage.setItem('unsentClicks', '0');
-        } else {
-            console.warn('Click sync failed, will retry later');
-        }
+        const res = await apiRequest(`/click`, 'POST', { clicks: unsentClicks });
+        unsentClicks = 0;
+        localStorage.setItem('unsentClicks', '0');
+        document.getElementById('cps-display').textContent = `All clicks saved at ${new Date().toLocaleTimeString()}`;
     } catch (err) {
-        console.error('Network error while syncing clicks', err);
+        console.warn('Sync failed, will retry');
     }
 }
-
-
 setInterval(syncClicks, 2000);
 
-async function purchaseUpgrade(upgradeId) {
+
+async function purchaseUpgrade(upgradeType, tier) {
     try {
-        await syncClicks();
-
-        const updatedUser = await apiRequest('/upgrade', 'POST', { upgradeId });
-
-        userData = updatedUser;
-        updateUI();
-        startPassiveIncome();
-        showNotification('Upgrade successful!', 'success');
-        tg.HapticFeedback.notificationOccurred('success');
-
-    } catch (e) {
-        showNotification(e.message, 'error');
-        tg.HapticFeedback.notificationOccurred('error');
-
-        try {
-            const refreshedUserData = await apiRequest('/user');
-            userData = refreshedUserData.user;
-            updateUI();
-        } catch (refreshError) {
-            console.error("Failed to re-sync user data after failed upgrade:", refreshError);
-        }
+        const data = await apiRequest(`/upgrade`, 'POST', { type: upgradeType, tier });
+        coins = parseFloat(data.newCoins);
+        updateCoinsDisplay();
+    } catch (err) {
+        console.error('Upgrade failed:', err);
+        showNotification('Upgrade failed: ' + err.message);
     }
 }
+
 
 
 setInterval(() => {
@@ -393,6 +365,8 @@ async function handleTransfer() {
 
 
 async function loadTopPlayers(sortBy = 'coins') {
+    await syncClicks();
+    
     const currentSort = document.querySelector('.top-tab-link.active')?.dataset.sort || 'coins';
     try {
         const topListEl = document.getElementById('topList');
