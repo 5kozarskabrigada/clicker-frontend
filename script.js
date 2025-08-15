@@ -15,7 +15,7 @@ let clickBuffer = 0;
 let lastClickTime = 0;
 let isSyncing = false;
 let clickSyncTimeout = null;
-const SYNC_INTERVAL = 1500; 
+const SYNC_INTERVAL = 1000; 
 const MAX_CLICKS_PER_SECOND = 25;
 const clickTimestamps = [];  
 
@@ -87,7 +87,7 @@ function showPage(pageId) {
     switch (pageId) {
         case 'top': loadTopPlayers(); break;
         case 'images': loadImages(); break;
-        case 'tasks': loadAchievements(); break;
+        case 'tasks': loadTasks(); break; 
         case 'transfer': loadHistory(); break;
     }
 }
@@ -243,11 +243,19 @@ clickImage.onclick = (event) => {
 };
 
 
-async function syncClicks() {
+async function syncClicks(isBeacon = false) {
     if (clickBuffer === 0 || isSyncing) return;
-    isSyncing = true;
+
     const clicksToSend = clickBuffer;
-    clickBuffer = 0;
+    clickBuffer = 0; 
+
+    if (isBeacon && navigator.sendBeacon) {
+        const blob = new Blob([JSON.stringify({ clicks: clicksToSend })], { type: 'application/json' });
+        navigator.sendBeacon(`${API_URL}/api/sync`, blob);
+        return; 
+    }
+
+    isSyncing = true;
     try {
         const updatedUser = await apiRequest('/click', 'POST', { clicks: clicksToSend });
         if (updatedUser) {
@@ -255,7 +263,8 @@ async function syncClicks() {
             updateUI();
         }
     } catch (err) {
-        clickBuffer += clicksToSend;
+        console.error("Sync failed, restoring clicks to buffer.");
+        clickBuffer += clicksToSend; 
     } finally {
         isSyncing = false;
     }
@@ -836,13 +845,12 @@ function setupEventListeners() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             if (clickBuffer > 0) {
-                savePendingClicks();
-                syncClicks();
+                syncClicks(true);
             }
         }
     });
 
-    // K
+
     setInterval(() => {
         const now = Date.now();
         while (clickTimestamps.length > 0 && clickTimestamps[0] < now - 1000) {
